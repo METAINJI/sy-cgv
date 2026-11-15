@@ -43,6 +43,24 @@ h1{font-size:1.25rem;font-weight:700;margin:0;letter-spacing:-.01em;white-space:
   .pill.bad:hover:not(:disabled){background:var(--bad);color:var(--bg)}
 }
 
+/* 확인창 */
+html.noscroll{overflow:hidden}
+.sheetWrap{position:fixed;inset:0;z-index:50;visibility:hidden;transition:visibility 0s .25s}
+.sheetWrap.open{visibility:visible;transition:visibility 0s}
+.backdrop{position:absolute;inset:0;background:rgba(0,0,0,.45);opacity:0;transition:opacity .25s}
+.sheet{position:absolute;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;padding:24px 24px max(24px,env(safe-area-inset-bottom));border:1px solid var(--line);border-bottom:0;border-radius:16px 16px 0 0;background:var(--bg);transform:translateY(100%);transition:transform .25s}
+.open .backdrop{opacity:1}
+.open .sheet{transform:none}
+.sheetQ{margin:0 0 16px;font-weight:700}
+.sheetInfo{display:flex;align-items:center;gap:16px;padding:16px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.sheetInfo .info{flex:1;min-width:0;font-size:.88rem}
+.sheetInfo h2{margin:0;font-size:1rem}
+.sheetInfo .line{justify-content:flex-start}
+.sheetMsg{min-height:1.6em;margin:12px 0 4px;color:var(--bad);font-size:.88rem}
+.sheetBtns{display:flex;flex-direction:column;align-items:stretch}
+.sheetBtns .pill{width:100%;margin:0 0 4px}
+.sheetBtns .txt{align-self:center}
+
 /* 캐러셀 */
 .stage{position:relative}
 .track{position:relative;display:flex;align-items:flex-start;gap:var(--gap);margin:0;padding:0 0 4px;list-style:none;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x mandatory;scrollbar-width:none}
@@ -93,7 +111,7 @@ h1{font-size:1.25rem;font-weight:700;margin:0;letter-spacing:-.01em;white-space:
   .row .info{flex:1 1 0}
   .row .pill{width:100%}
 }
-@media (prefers-reduced-motion:reduce){.poster,.t{transition:none}}
+@media (prefers-reduced-motion:reduce){.poster,.t,.backdrop,.sheet{transition:none}}
 </style>
 </head>
 <body>
@@ -123,6 +141,19 @@ h1{font-size:1.25rem;font-weight:700;margin:0;letter-spacing:-.01em;white-space:
   <div id="view"></div>
 </main>
 
+<div class="sheetWrap" id="sheetWrap">
+  <div class="backdrop" onclick="closeSheet()"></div>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetQ">
+    <p class="sheetQ" id="sheetQ"></p>
+    <div class="sheetInfo" id="sheetInfo"></div>
+    <p class="sheetMsg" id="sheetMsg" role="alert"></p>
+    <div class="sheetBtns">
+      <button class="pill" id="sheetOk" type="button"></button>
+      <button class="txt" type="button" onclick="closeSheet()">닫기</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const API = "https://songyang-cgv.pcofjeongchan.workers.dev"; // 배포한 Worker 주소
 const TEST_MODE = true; // 로그인 없이 테스트 (운영 때는 false)
@@ -145,7 +176,7 @@ async function api(path, opts = {}) {
   if (!r.ok) throw new Error(d.error || "오류가 발생했습니다.");
   return d;
 }
-const say = (t) => ($("#msg").textContent = t);
+const say = (t) => (($("#sheetWrap").classList.contains("open") ? $("#sheetMsg") : $("#msg")).textContent = t); // 확인창이 열려 있으면 그 안에 표시
 
 // 로그인 상태
 function showUser() {
@@ -156,11 +187,11 @@ function showUser() {
   if (TEST_MODE) say("테스트 모드입니다. 로그인 없이 예매를 시험할 수 있습니다.");
   else if (!token) say("로그인하면 예매할 수 있습니다.");
 }
-function logout(m = "") { ["token", "name", "admin"].forEach((k) => localStorage.removeItem(k)); token = null; showUser(); load(); if (m) say(m); }
+function logout(m = "") { closeSheet(true); ["token", "name", "admin"].forEach((k) => localStorage.removeItem(k)); token = null; showUser(); load(); if (m) say(m); }
 
 // 공통 조각
 const poster = (s) => s.poster_url
-  ? `<img src="${esc(s.poster_url)}" alt="${esc(s.title)}" loading="lazy" draggable="false" onerror="phFix(this)">`
+  ? `<img src="${esc(s.poster_url)}" alt="${esc(s.title)}" loading="lazy" draggable="false" referrerpolicy="no-referrer" onerror="phFix(this)">`
   : `<span class="ph">${esc(s.title)}</span>`;
 function phFix(img) { const p = document.createElement("span"); p.className = "ph"; p.textContent = img.alt; img.replaceWith(p); }
 function meta(s) {
@@ -171,8 +202,8 @@ function meta(s) {
 function btn(s) {
   const m = mine === s.id, full = s.remaining <= 0 && !m;
   if (!token) return `<button class="pill" disabled>로그인 필요</button>`;
-  if (m) return `<button class="pill bad" onclick="cancelRes(this)">예매 취소</button>`;
-  return `<button class="pill" ${full ? "disabled" : ""} onclick="reserve(${s.id}, this)">${full ? "매진" : mine !== null ? "이 영화로 변경" : "예매하기"}</button>`;
+  if (m) return `<button class="pill bad" onclick="askCancel(this)">예매 취소</button>`;
+  return `<button class="pill" ${full ? "disabled" : ""} onclick="ask(${s.id}, this)">${full ? "매진" : mine !== null ? "이 영화로 변경" : "예매하기"}</button>`;
 }
 const desc = (s) => (s.description ? `<p class="desc">${esc(s.description)}</p>` : "");
 
@@ -266,26 +297,59 @@ async function load() {
 }
 // 처리 중 버튼 잠금 (중복 클릭 방지)
 let busy = false;
-async function act(btn, label, fn) {
+async function act(btn, label, fn, keep) {
   if (busy) return;
   busy = true;
   const old = btn.textContent;
   document.querySelectorAll(".pill").forEach((b) => (b.disabled = true));
   btn.textContent = label; btn.classList.add("wait");
-  try { await fn(); } catch (e) { say(e.message); }
+  let ok = true;
+  try { await fn(); } catch (e) { ok = false; say(e.message); }
   busy = false; sig = "";
   await load();
   draw(); // 통신 실패로 목록이 안 그려진 경우 대비
+  if (ok && keep) return; // 확인창은 닫히는 중이라 글자를 되돌리지 않음
   btn.textContent = old; btn.classList.remove("wait"); btn.disabled = false;
 }
-const reserve = (id, btn) => act(btn, "예매 중...", async () => {
-  await api("/api/reserve", { method: "POST", body: JSON.stringify({ screeningId: id }) });
-  say("예매가 완료되었습니다.");
-});
-const cancelRes = (btn) => act(btn, "취소 중...", async () => {
-  await api("/api/reserve", { method: "DELETE" });
-  say("예매를 취소했습니다.");
-});
+
+// 확인창 (아래에서 올라옴)
+let sheetFrom = null;
+function openSheet(type, id, from) {
+  const s = items.find((x) => x.id === id), prev = items.find((x) => x.id === mine);
+  if (!s || busy) return;
+  const C = {
+    reserve: ["이 영화를 예매할까요?", "예매하기", "예매 중...", "예매가 완료되었습니다."],
+    change: [`'${prev ? prev.title : ""}' 예매가 이 영화로 변경됩니다.`, "이 영화로 변경", "변경 중...", "예매를 변경했습니다."],
+    cancel: ["예매를 취소할까요?", "예매 취소", "취소 중...", "예매를 취소했습니다."],
+  }[type];
+  sheetFrom = from;
+  $("#sheetQ").textContent = C[0];
+  $("#sheetInfo").innerHTML = `<div class="th">${poster(s)}</div><div class="info"><h2>${esc(s.title)}</h2>${meta(s)}</div>`;
+  $("#sheetMsg").textContent = "";
+  const ok = $("#sheetOk");
+  ok.textContent = C[1]; ok.disabled = false; ok.classList.remove("wait"); ok.classList.toggle("bad", type === "cancel");
+  ok.onclick = () => act(ok, C[2], async () => {
+    if (type === "cancel") await api("/api/reserve", { method: "DELETE" });
+    else await api("/api/reserve", { method: "POST", body: JSON.stringify({ screeningId: id }) });
+    closeSheet(true);
+    say(C[3]);
+  }, true);
+  $("main").inert = true;
+  document.documentElement.classList.add("noscroll");
+  $("#sheetWrap").classList.add("open");
+  ok.focus();
+}
+function closeSheet(force) {
+  if (busy && !force) return;
+  $("#sheetWrap").classList.remove("open");
+  document.documentElement.classList.remove("noscroll");
+  $("main").inert = false;
+  if (sheetFrom && sheetFrom.isConnected) sheetFrom.focus();
+  sheetFrom = null;
+}
+const ask = (id, el) => openSheet(mine !== null ? "change" : "reserve", id, el);
+const askCancel = (el) => openSheet("cancel", mine, el);
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeSheet(); });
 
 // 이벤트
 $("#viewBtn").onclick = () => { view = view === "list" ? "card" : "list"; localStorage.setItem("view", view); draw(); };
