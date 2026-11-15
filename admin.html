@@ -55,6 +55,11 @@ ul{margin:0;padding:0;list-style:none;border-top:1px solid var(--line)}
 .meta{display:flex;flex:1;flex-direction:column;min-width:0;font-size:.9rem}
 .meta strong{font-size:1rem;overflow-wrap:anywhere}
 .btns{display:flex;flex:none;gap:8px}
+.idx{flex:none;width:1.4em;text-align:center;font-size:.85rem}
+.thumb.err{display:grid;place-items:center;border:1px solid var(--bad);background:none;color:var(--bad);font-size:.8rem;font-weight:700}
+button.ico{min-width:44px;padding:0}
+.hint{margin:4px 0 0;color:var(--mut);font-size:.82rem}
+.order span{flex:1 1 100%;color:var(--mut);font-size:.88rem}
 
 @media (max-width:520px){
   main{padding-top:20px;padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right))}
@@ -88,13 +93,18 @@ ul{margin:0;padding:0;list-style:none;border-top:1px solid var(--line)}
         <div><label for="room">반 이름(상영 장소)</label><input id="room" placeholder="예: 2반 교실" maxlength="50"></div>
         <div><label for="start_at">상영 시간</label><input id="start_at" placeholder="예: 12/18 5교시" maxlength="50"></div>
         <div><label for="capacity">정원</label><input id="capacity" type="number" min="1" max="500" value="30" required></div>
-        <div class="full"><label for="poster_url">이미지 링크 (https://로 시작)</label><input id="poster_url" type="url" placeholder="https://..."></div>
+        <div class="full"><label for="poster_url">이미지 링크 (https://로 시작)</label><input id="poster_url" type="url" placeholder="https://..." maxlength="1000"><p class="hint" id="posterHint" aria-live="polite"></p></div>
         <div class="full"><label for="description">한 줄 소개</label><textarea id="description" rows="2" maxlength="500"></textarea></div>
       </div>
       <div class="bar"><button id="saveBtn">등록</button><button class="line" id="resetBtn" type="button" hidden>수정 취소</button></div>
     </form>
 
     <h2>등록된 영화</h2>
+    <p class="hint">↑ ↓ 버튼으로 순서를 바꾸면 예매 화면에도 같은 순서로 보입니다.</p>
+    <div class="bar order" id="orderBar" hidden>
+      <span>순서를 바꿨습니다. 저장해야 예매 화면에 반영됩니다.</span>
+      <button id="orderSave" type="button">순서 저장</button><button class="line" id="orderUndo" type="button">되돌리기</button>
+    </div>
     <ul id="rows"></ul>
     <div class="bar"><button class="line" id="csvBtn" type="button">예매 명단 CSV 내려받기</button></div>
   </div>
@@ -105,7 +115,7 @@ const API = "https://songyang-cgv.pcofjeongchan.workers.dev"; // index.html과 �
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const FIELDS = ["title", "room", "start_at", "capacity", "poster_url", "description"];
-let pw = sessionStorage.getItem("adminPw") || "", data = [], editId = null; // 비밀번호는 탭을 닫으면 사라집니다
+let pw = sessionStorage.getItem("adminPw") || "", data = [], editId = null, dirty = false; // 비밀번호는 탭을 닫으면 사라집니다
 const say = (t) => ($("#msg").textContent = t);
 
 // 처리 중 모든 버튼 잠금 (중복 클릭 방지)
@@ -129,26 +139,50 @@ async function api(path, opts = {}) {
   return d;
 }
 function show(on) { $("#panel").hidden = !on; $("#loginForm").hidden = on; }
-function logout(m = "") { pw = ""; sessionStorage.removeItem("adminPw"); show(false); say(m); }
+function logout(m = "") { dirty = false; pw = ""; sessionStorage.removeItem("adminPw"); show(false); say(m); }
 
 async function load() {
   try {
-    data = (await api("/api/admin/screenings")).screenings;
+    const fresh = (await api("/api/admin/screenings")).screenings;
+    if (dirty) { // 순서를 바꾸는 중이면 화면의 순서를 유지
+      const pos = new Map(data.map((s, i) => [s.id, i]));
+      fresh.sort((a, b) => (pos.get(a.id) ?? 1e9) - (pos.get(b.id) ?? 1e9));
+    }
+    data = fresh;
     show(true); say("");
-    $("#rows").innerHTML = data.length ? data.map((s, i) => `<li class="item">
-      ${s.poster_url ? `<img class="thumb" src="${esc(s.poster_url)}" alt="">` : `<span class="thumb"></span>`}
-      <div class="meta"><strong>${esc(s.title)}</strong>
-        <span class="mut">${esc([s.room, s.start_at].filter(Boolean).join(", ")) || "반, 시간 미정"}</span>
-        <span class="mut">예매 ${s.reserved}/${s.capacity}명</span></div>
-      <div class="btns"><button class="line" onclick="edit(${i})">수정</button><button class="bad" onclick="del(${i}, this)">삭제</button></div></li>`).join("")
-      : `<li class="item mut">아직 등록된 영화가 없습니다. 위 양식으로 첫 영화를 등록하세요.</li>`;
+    renderRows();
   } catch (e) { logout(e.message); }
 }
-function resetForm() { editId = null; $("#f").reset(); $("#capacity").value = 30; $("#formTitle").textContent = "영화 등록"; $("#saveBtn").textContent = "등록"; $("#resetBtn").hidden = true; }
+function renderRows() {
+  $("#orderBar").hidden = !dirty;
+  $("#rows").innerHTML = data.length ? data.map((s, i) => `<li class="item">
+    <span class="idx mut" aria-hidden="true">${i + 1}</span>
+    ${s.poster_url ? `<img class="thumb" src="${esc(s.poster_url)}" alt="" referrerpolicy="no-referrer" onerror="imgErr(this)">` : `<span class="thumb"></span>`}
+    <div class="meta"><strong>${esc(s.title)}</strong>
+      <span class="mut">${esc([s.room, s.start_at].filter(Boolean).join(", ")) || "반, 시간 미정"}</span>
+      <span class="mut">예매 ${s.reserved}/${s.capacity}명</span></div>
+    <div class="btns">
+      <button class="line ico" aria-label="위로 이동" ${i === 0 ? "disabled" : ""} onclick="move(${i}, -1)">↑</button>
+      <button class="line ico" aria-label="아래로 이동" ${i === data.length - 1 ? "disabled" : ""} onclick="move(${i}, 1)">↓</button>
+      <button class="line" onclick="edit(${i})">수정</button><button class="bad" onclick="del(${i}, this)">삭제</button></div></li>`).join("")
+    : `<li class="item mut">아직 등록된 영화가 없습니다. 위 양식으로 첫 영화를 등록하세요.</li>`;
+}
+function imgErr(img) { // 이미지가 안 뜨면 목록에 표시
+  const s = document.createElement("span");
+  s.className = "thumb err"; s.textContent = "!"; s.title = "이미지를 불러오지 못했습니다";
+  img.replaceWith(s);
+}
+function move(i, d) { // 순서는 [순서 저장]을 눌러야 서버에 반영됨
+  const j = i + d;
+  if (busy || j < 0 || j >= data.length) return;
+  [data[i], data[j]] = [data[j], data[i]];
+  dirty = true; renderRows();
+}
+function resetForm() { editId = null; $("#f").reset(); $("#capacity").value = 30; $("#formTitle").textContent = "영화 등록"; $("#saveBtn").textContent = "등록"; $("#resetBtn").hidden = true; $("#posterHint").textContent = ""; chk++; }
 function edit(i) {
   const s = data[i]; editId = s.id;
   FIELDS.forEach((k) => ($("#" + k).value = s[k] ?? ""));
-  $("#formTitle").textContent = "영화 수정"; $("#saveBtn").textContent = "저장"; $("#resetBtn").hidden = false;
+  $("#formTitle").textContent = "영화 수정"; $("#saveBtn").textContent = "저장"; $("#resetBtn").hidden = false; checkPoster();
   scrollTo({ top: 0, behavior: "smooth" });
 }
 function del(i, btn) {
@@ -169,6 +203,28 @@ $("#f").onsubmit = (e) => {
   });
 };
 $("#resetBtn").onclick = resetForm;
+
+// 이미지 링크 확인 (저장 전에 실제로 불러와지는지 미리 확인)
+let chk = 0;
+function checkPoster() {
+  const u = $("#poster_url").value.trim(), box = $("#posterHint"), n = ++chk;
+  if (!u) { box.textContent = ""; return; }
+  box.textContent = "이미지 확인 중...";
+  const im = new Image();
+  im.referrerPolicy = "no-referrer";
+  im.onload = () => { if (n === chk) box.textContent = "이미지를 불러왔습니다."; };
+  im.onerror = () => { if (n === chk) box.textContent = "이미지를 불러올 수 없습니다. 이미지 파일 자체의 주소(.jpg, .png 등)인지 확인하세요."; };
+  im.src = u;
+}
+$("#poster_url").onchange = checkPoster;
+
+// 순서 저장 / 되돌리기
+$("#orderSave").onclick = () => act($("#orderSave"), "저장 중...", async () => {
+  await api("/api/admin/screenings/order", { method: "POST", body: JSON.stringify({ ids: data.map((s) => s.id) }) });
+  dirty = false; await load(); say("순서를 저장했습니다.");
+});
+$("#orderUndo").onclick = () => act($("#orderUndo"), "불러오는 중...", async () => { dirty = false; await load(); });
+addEventListener("beforeunload", (e) => { if (dirty) e.preventDefault(); });
 $("#csvBtn").onclick = () => act($("#csvBtn"), "불러오는 중...", async () => {
   const { roster } = await api("/api/admin/roster");
   const t = Object.fromEntries(data.map((s) => [s.id, s]));
