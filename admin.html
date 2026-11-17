@@ -7,8 +7,8 @@
 <title>관리자 대시보드</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#fff;--ink:#111827;--mut:#6b7280;--line:#e5e7eb;--bad:#b91c1c;--ph:#2a2d34}
-@media (prefers-color-scheme:dark){:root{--bg:#101114;--ink:#e7e8ea;--mut:#9aa0a8;--line:#272a30;--bad:#f87171;--ph:#1b1d22}}
+:root{--bg:#fff;--ink:#111827;--mut:#6b7280;--line:#e5e7eb;--bad:#b91c1c;--ph:#2a2d34;--hl:#f3f4f6}
+@media (prefers-color-scheme:dark){:root{--bg:#101114;--ink:#e7e8ea;--mut:#9aa0a8;--line:#272a30;--bad:#f87171;--ph:#1b1d22;--hl:#1b1d22}}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 "Noto Sans KR",system-ui,sans-serif;word-break:keep-all;overflow-wrap:break-word}
@@ -44,20 +44,24 @@ button:disabled,button.line:disabled,button.bad:disabled{border-color:var(--line
 @media (hover:hover){
   button:hover:not(:disabled){background:var(--ink);color:var(--bg)}
   button.bad:hover:not(:disabled){background:var(--bad);color:var(--bg)}
+  button.grip:hover:not(:disabled){background:none;color:var(--ink)}
 }
 .bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:16px 0}
 .bar input{width:240px}
 
 /* 영화 목록 */
 ul{margin:0;padding:0;list-style:none;border-top:1px solid var(--line)}
-.item{display:flex;align-items:center;gap:16px;padding:14px 0;border-bottom:1px solid var(--line)}
+.item{position:relative;display:flex;align-items:center;gap:16px;padding:14px 0;border-bottom:1px solid var(--line)}
+.item.drag{z-index:2;background:var(--hl)}
+body.dragging{user-select:none;cursor:grabbing}
 .thumb{display:block;flex:none;width:44px;aspect-ratio:2/3;border-radius:3px;background:var(--ph);object-fit:cover}
 .meta{display:flex;flex:1;flex-direction:column;min-width:0;font-size:.9rem}
 .meta strong{font-size:1rem;overflow-wrap:anywhere}
 .btns{display:flex;flex:none;gap:8px}
 .idx{flex:none;width:1.4em;text-align:center;font-size:.85rem}
 .thumb.err{display:grid;place-items:center;border:1px solid var(--bad);background:none;color:var(--bad);font-size:.8rem;font-weight:700}
-button.ico{min-width:44px;padding:0}
+button.grip{display:grid;place-items:center;flex:none;min-width:32px;min-height:44px;padding:0;border:0;border-radius:6px;background:none;color:var(--mut);cursor:grab;touch-action:none;user-select:none;-webkit-touch-callout:none}
+button.grip:disabled{cursor:default;opacity:.4}
 .hint{margin:4px 0 0;color:var(--mut);font-size:.82rem}
 .order span{flex:1 1 100%;color:var(--mut);font-size:.88rem}
 
@@ -100,7 +104,7 @@ button.ico{min-width:44px;padding:0}
     </form>
 
     <h2>등록된 영화</h2>
-    <p class="hint">↑ ↓ 버튼으로 순서를 바꾸면 예매 화면에도 같은 순서로 보입니다.</p>
+    <p class="hint">왼쪽 점 6개 아이콘을 끌어서 순서를 바꾸면 예매 화면에도 같은 순서로 보입니다.</p>
     <div class="bar order" id="orderBar" hidden>
       <span>순서를 바꿨습니다. 저장해야 예매 화면에 반영됩니다.</span>
       <button id="orderSave" type="button">순서 저장</button><button class="line" id="orderUndo" type="button">되돌리기</button>
@@ -155,16 +159,14 @@ async function load() {
 }
 function renderRows() {
   $("#orderBar").hidden = !dirty;
-  $("#rows").innerHTML = data.length ? data.map((s, i) => `<li class="item">
+  $("#rows").innerHTML = data.length ? data.map((s, i) => `<li class="item" data-id="${s.id}">
+    <button class="grip" type="button" aria-label="순서 이동 (끌어서 이동, 키보드는 위/아래 방향키)"><svg width="10" height="16" viewBox="0 0 10 16" fill="currentColor" aria-hidden="true"><circle cx="2" cy="2" r="1.6"/><circle cx="8" cy="2" r="1.6"/><circle cx="2" cy="8" r="1.6"/><circle cx="8" cy="8" r="1.6"/><circle cx="2" cy="14" r="1.6"/><circle cx="8" cy="14" r="1.6"/></svg></button>
     <span class="idx mut" aria-hidden="true">${i + 1}</span>
     ${s.poster_url ? `<img class="thumb" src="${esc(s.poster_url)}" alt="" referrerpolicy="no-referrer" onerror="imgErr(this)">` : `<span class="thumb"></span>`}
     <div class="meta"><strong>${esc(s.title)}</strong>
       <span class="mut">${esc([s.room, s.start_at].filter(Boolean).join(", ")) || "반, 시간 미정"}</span>
       <span class="mut">예매 ${s.reserved}/${s.capacity}명</span></div>
-    <div class="btns">
-      <button class="line ico" aria-label="위로 이동" ${i === 0 ? "disabled" : ""} onclick="move(${i}, -1)">↑</button>
-      <button class="line ico" aria-label="아래로 이동" ${i === data.length - 1 ? "disabled" : ""} onclick="move(${i}, 1)">↓</button>
-      <button class="line" onclick="edit(${i})">수정</button><button class="bad" onclick="del(${i}, this)">삭제</button></div></li>`).join("")
+    <div class="btns"><button class="line" onclick="edit(${s.id})">수정</button><button class="bad" onclick="del(${s.id}, this)">삭제</button></div></li>`).join("")
     : `<li class="item mut">아직 등록된 영화가 없습니다. 위 양식으로 첫 영화를 등록하세요.</li>`;
 }
 function imgErr(img) { // 이미지가 안 뜨면 목록에 표시
@@ -172,21 +174,80 @@ function imgErr(img) { // 이미지가 안 뜨면 목록에 표시
   s.className = "thumb err"; s.textContent = "!"; s.title = "이미지를 불러오지 못했습니다";
   img.replaceWith(s);
 }
-function move(i, d) { // 순서는 [순서 저장]을 눌러야 서버에 반영됨
-  const j = i + d;
-  if (busy || j < 0 || j >= data.length) return;
-  [data[i], data[j]] = [data[j], data[i]];
-  dirty = true; renderRows();
+// 순서 변경 (점 6개 아이콘을 끌어서 이동, [순서 저장]을 눌러야 서버에 반영)
+let drag = null;
+const calm = () => matchMedia("(prefers-reduced-motion:reduce)").matches;
+function flip(el, change) { // 밀려나는 항목이 부드럽게 자리를 옮기도록
+  const t0 = el.getBoundingClientRect().top;
+  change();
+  const dy = t0 - el.getBoundingClientRect().top;
+  if (!dy || calm()) return;
+  el.style.transition = "none"; el.style.transform = `translateY(${dy}px)`;
+  el.getBoundingClientRect();
+  el.style.transition = "transform .15s"; el.style.transform = "";
 }
+function commit() { // 화면 순서를 data에 반영
+  const rows = [...$("#rows").children];
+  const ids = rows.map((li) => Number(li.dataset.id));
+  if (ids.join() === data.map((s) => s.id).join()) return;
+  const by = new Map(data.map((s) => [s.id, s]));
+  data = ids.map((id) => by.get(id));
+  dirty = true; $("#orderBar").hidden = false;
+  rows.forEach((li, k) => (li.querySelector(".idx").textContent = k + 1));
+}
+function dragStep() {
+  const d = drag; if (!d) return;
+  const li = d.li, ul = li.parentNode, mid = (el) => { const r = el.getBoundingClientRect(); return r.top + r.height / 2; };
+  const v = d.y < 70 ? -12 : d.y > innerHeight - 70 ? 12 : 0; // 화면 가장자리에서 자동 스크롤
+  if (v) { const b = scrollY; scrollBy(0, v); d.startY -= scrollY - b; }
+  for (;;) {
+    li.style.transform = `translateY(${d.y - d.startY}px)`;
+    const p = li.previousElementSibling, n = li.nextElementSibling, m = mid(li);
+    if (p && m < mid(p)) { flip(p, () => ul.insertBefore(li, p)); d.startY -= p.offsetHeight; }
+    else if (n && m > mid(n)) { flip(n, () => ul.insertBefore(n, li)); d.startY += n.offsetHeight; }
+    else break;
+  }
+  requestAnimationFrame(dragStep);
+}
+function endDrag() {
+  const d = drag; if (!d) return;
+  drag = null;
+  d.g.onpointermove = d.g.onpointerup = d.g.onpointercancel = null;
+  d.li.style.transition = calm() ? "" : "transform .15s"; d.li.style.transform = "";
+  setTimeout(() => (d.li.style.transition = ""), 160);
+  d.li.classList.remove("drag"); document.body.classList.remove("dragging");
+  commit();
+}
+$("#rows").addEventListener("pointerdown", (e) => {
+  const g = e.target.closest(".grip");
+  if (!g || busy || drag || e.button > 0) return;
+  e.preventDefault();
+  drag = { g, li: g.closest("li"), y: e.clientY, startY: e.clientY };
+  g.setPointerCapture(e.pointerId);
+  g.onpointermove = (ev) => { drag.y = ev.clientY; };
+  g.onpointerup = g.onpointercancel = endDrag;
+  drag.li.classList.add("drag"); document.body.classList.add("dragging");
+  requestAnimationFrame(dragStep);
+});
+$("#rows").addEventListener("keydown", (e) => { // 키보드: 아이콘에 포커스 후 위/아래 방향키
+  const g = e.target.closest(".grip");
+  if (!g || busy || (e.key !== "ArrowUp" && e.key !== "ArrowDown")) return;
+  e.preventDefault();
+  const li = g.closest("li"), up = e.key === "ArrowUp", sib = up ? li.previousElementSibling : li.nextElementSibling;
+  if (!sib) return;
+  flip(sib, () => (up ? li.parentNode.insertBefore(li, sib) : li.parentNode.insertBefore(sib, li)));
+  g.focus(); commit();
+});
+
 function resetForm() { editId = null; $("#f").reset(); $("#capacity").value = 30; $("#formTitle").textContent = "영화 등록"; $("#saveBtn").textContent = "등록"; $("#resetBtn").hidden = true; $("#posterHint").textContent = ""; chk++; }
-function edit(i) {
-  const s = data[i]; editId = s.id;
+function edit(id) {
+  const s = data.find((x) => x.id === id); editId = id;
   FIELDS.forEach((k) => ($("#" + k).value = s[k] ?? ""));
   $("#formTitle").textContent = "영화 수정"; $("#saveBtn").textContent = "저장"; $("#resetBtn").hidden = false; checkPoster();
   scrollTo({ top: 0, behavior: "smooth" });
 }
-function del(i, btn) {
-  const s = data[i];
+function del(id, btn) {
+  const s = data.find((x) => x.id === id);
   if (!confirm(`"${s.title}"을(를) 삭제할까요? 이 영화의 예매 ${s.reserved}건도 함께 삭제됩니다.`)) return;
   act(btn, "삭제 중...", async () => {
     await api("/api/admin/screenings/" + s.id, { method: "DELETE" });
