@@ -120,7 +120,7 @@ const API = "https://songyang-cgv.pcofjeongchan.workers.dev"; // index.html과 �
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const FIELDS = ["title", "room", "start_at", "capacity", "poster_url", "description"];
-let pw = sessionStorage.getItem("adminPw") || "", data = [], editId = null, dirty = false; // 비밀번호는 탭을 닫으면 사라집니다
+let pw = sessionStorage.getItem("adminPw") || "", data = [], editId = null, dirty = false, saved = []; // 비밀번호는 탭을 닫으면 사라집니다
 const say = (t) => ($("#msg").textContent = t);
 
 // 처리 중 모든 버튼 잠금 (중복 클릭 방지)
@@ -149,6 +149,7 @@ function logout(m = "") { dirty = false; pw = ""; sessionStorage.removeItem("adm
 async function load() {
   try {
     const fresh = (await api("/api/admin/screenings")).screenings;
+    saved = fresh.map((s) => s.id); // 서버에 저장된 순서 (되돌리기용)
     if (dirty) { // 순서를 바꾸는 중이면 화면의 순서를 유지
       const pos = new Map(data.map((s, i) => [s.id, i]));
       fresh.sort((a, b) => (pos.get(a.id) ?? 1e9) - (pos.get(b.id) ?? 1e9));
@@ -200,27 +201,37 @@ function commit() { // 화면 순서를 data에 반영
   dirty = true; $("#orderBar").hidden = false;
   rows.forEach((li, k) => (li.querySelector(".idx").textContent = k + 1));
 }
+const schedule = () => { if (drag && !drag.raf) drag.raf = requestAnimationFrame(dragStep); }; // 움직임이 있을 때만 계산
 function dragStep() {
   const d = drag; if (!d) return;
+  d.raf = 0;
   const li = d.li, ul = li.parentNode, c = (el) => el.offsetTop + el.offsetHeight / 2; // 애니메이션과 무관한 레이아웃 기준
   const edge = 60, top = d.y < edge, bot = d.y > innerHeight - edge;
   if (top || bot) { // 가장자리에서 자동 스크롤 (가까울수록 빠르게)
     const k = Math.min(1, top ? (edge - d.y) / edge : (d.y - innerHeight + edge) / edge);
     const b = scrollY; scrollBy(0, Math.ceil(k * 14) * (top ? -1 : 1)); d.startY -= scrollY - b;
   }
-  for (;;) {
+  for (;;) { // 끄는 줄은 DOM에서 옮기지 않고 옆 줄을 옮김 (옮기면 포인터 캡처가 풀려 드래그가 멈춤)
     const m = c(li) + d.y - d.startY, p = li.previousElementSibling, n = li.nextElementSibling;
-    if (p && m < c(p)) { flip(p, () => ul.insertBefore(li, p)); d.startY -= p.offsetHeight; }
+    if (p && m < c(p)) { flip(p, () => ul.insertBefore(p, li.nextElementSibling)); d.startY -= p.offsetHeight; }
     else if (n && m > c(n)) { flip(n, () => ul.insertBefore(n, li)); d.startY += n.offsetHeight; }
     else break;
   }
   li.style.transform = `translateY(${d.y - d.startY}px)`;
-  requestAnimationFrame(dragStep);
+  if (top || bot) schedule();
 }
-function endDrag() {
-  const d = drag; if (!d) return;
+function onMove(ev) {
+  const d = drag; if (!d || ev.pointerId !== d.pid) return;
+  if (ev.pointerType === "mouse" && ev.buttons === 0) return endDrag(); // 버튼을 뗐는데 pointerup을 놓친 경우
+  d.y = ev.clientY; schedule();
+}
+function endDrag(ev) {
+  const d = drag;
+  if (!d || (ev && ev.pointerId !== undefined && ev.pointerId !== d.pid)) return;
   drag = null;
-  d.g.onpointermove = d.g.onpointerup = d.g.onpointercancel = null;
+  cancelAnimationFrame(d.raf);
+  removeEventListener("pointermove", onMove); removeEventListener("pointerup", endDrag);
+  removeEventListener("pointercancel", endDrag); removeEventListener("blur", endDrag);
   const dy = d.y - d.startY;
   d.li.style.transform = "";
   slide(d.li, dy); // 놓은 자리에서 제 자리로 안착
@@ -233,21 +244,21 @@ $("#rows").addEventListener("pointerdown", (e) => {
   e.preventDefault();
   const li = g.closest("li");
   clearTimeout(li._t); li.style.transition = "none"; // 이전 이동 효과가 남아 끌림이 지연되지 않도록
-  drag = { g, li, y: e.clientY, startY: e.clientY };
-  g.setPointerCapture(e.pointerId);
-  g.onpointermove = (ev) => { drag.y = ev.clientY; };
-  g.onpointerup = g.onpointercancel = endDrag;
+  drag = { li, pid: e.pointerId, y: e.clientY, startY: e.clientY, raf: 0 };
+  try { g.setPointerCapture(e.pointerId); } catch {}
+  addEventListener("pointermove", onMove); addEventListener("pointerup", endDrag);
+  addEventListener("pointercancel", endDrag); addEventListener("blur", endDrag);
   li.classList.add("drag"); document.body.classList.add("dragging");
-  requestAnimationFrame(dragStep);
 });
+$("#rows").addEventListener("contextmenu", (e) => { if (e.target.closest(".grip")) e.preventDefault(); }); // 길게 누를 때 메뉴 방지
 $("#rows").addEventListener("keydown", (e) => { // 키보드: 아이콘에 포커스 후 위/아래 방향키
   const g = e.target.closest(".grip");
   if (!g || busy || (e.key !== "ArrowUp" && e.key !== "ArrowDown")) return;
   e.preventDefault();
-  const li = g.closest("li"), up = e.key === "ArrowUp", sib = up ? li.previousElementSibling : li.nextElementSibling;
+  const li = g.closest("li"), ul = li.parentNode, up = e.key === "ArrowUp", sib = up ? li.previousElementSibling : li.nextElementSibling;
   if (!sib) return;
-  flip(sib, () => (up ? li.parentNode.insertBefore(li, sib) : li.parentNode.insertBefore(sib, li)));
-  g.focus(); commit();
+  flip(sib, () => ul.insertBefore(sib, up ? li.nextElementSibling : li));
+  commit();
 });
 
 function resetForm() { editId = null; $("#f").reset(); $("#capacity").value = 30; $("#formTitle").textContent = "영화 등록"; $("#saveBtn").textContent = "등록"; $("#resetBtn").hidden = true; $("#posterHint").textContent = ""; chk++; }
@@ -293,9 +304,13 @@ $("#poster_url").onchange = checkPoster;
 // 순서 저장 / 되돌리기
 $("#orderSave").onclick = () => act($("#orderSave"), "저장 중...", async () => {
   await api("/api/admin/screenings/order", { method: "POST", body: JSON.stringify({ ids: data.map((s) => s.id) }) });
-  dirty = false; await load(); say("순서를 저장했습니다.");
+  saved = data.map((s) => s.id); dirty = false; renderRows(); say("순서를 저장했습니다.");
 });
-$("#orderUndo").onclick = () => act($("#orderUndo"), "불러오는 중...", async () => { dirty = false; await load(); });
+$("#orderUndo").onclick = () => { // 서버를 다시 읽지 않고 저장된 순서로 복원
+  const pos = new Map(saved.map((id, i) => [id, i]));
+  data.sort((a, b) => (pos.get(a.id) ?? 1e9) - (pos.get(b.id) ?? 1e9));
+  dirty = false; renderRows(); say("저장된 순서로 되돌렸습니다.");
+};
 addEventListener("beforeunload", (e) => { if (dirty) e.preventDefault(); });
 $("#csvBtn").onclick = () => act($("#csvBtn"), "불러오는 중...", async () => {
   const { roster } = await api("/api/admin/roster");
