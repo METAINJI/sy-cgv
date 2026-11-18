@@ -173,7 +173,7 @@ async function api(path, opts = {}) {
   const r = await fetch(API + path, { ...opts, headers: { "Content-Type": "application/json", ...(token ? { Authorization: "Bearer " + token } : {}), ...(TEST_MODE ? { "X-Test-User": testUser } : {}) } });
   const d = await r.json().catch(() => ({}));
   if (r.status === 401 && token && path !== "/api/login") logout("로그인이 만료되었습니다. 다시 로그인해 주세요.");
-  if (!r.ok) throw new Error(d.error || "오류가 발생했습니다.");
+  if (!r.ok) throw Object.assign(new Error(d.error || "오류가 발생했습니다."), { status: r.status });
   return d;
 }
 const say = (t) => (($("#sheetWrap").classList.contains("open") ? $("#sheetMsg") : $("#msg")).textContent = t); // 확인창이 열려 있으면 그 안에 표시
@@ -187,7 +187,7 @@ function showUser() {
   if (TEST_MODE) say("테스트 모드입니다. 로그인 없이 예매를 시험할 수 있습니다.");
   else if (!token) say("로그인하면 예매할 수 있습니다.");
 }
-function logout(m = "") { closeSheet(true); ["token", "name", "admin"].forEach((k) => localStorage.removeItem(k)); token = null; showUser(); load(); if (m) say(m); }
+function logout(m = "") { closeSheet(true); ["token", "name", "admin"].forEach((k) => localStorage.removeItem(k)); token = null; mine = null; showUser(); sig = ""; draw(); if (m) say(m); }
 
 // 공통 조각
 const poster = (s) => s.poster_url
@@ -287,7 +287,6 @@ function draw() {
   if (items.length && shown === key() && $("#track, .rows")) patch(); else render();
 }
 async function load() {
-  if (busy) return; // 처리 중에는 자동 갱신 건너뜀
   try {
     const d = await api("/api/screenings");
     items = d.screenings; mine = d.mine;
@@ -306,11 +305,12 @@ async function act(btn, label, fn, keep) {
   let ok = true;
   try { await fn(); } catch (e) { ok = false; say(e.message); }
   busy = false; sig = "";
-  await load();
-  draw(); // 통신 실패로 목록이 안 그려진 경우 대비
+  draw(); // 서버를 다시 읽지 않고 화면의 값으로 갱신
   if (ok && keep) return; // 확인창은 닫히는 중이라 글자를 되돌리지 않음
   btn.textContent = old; btn.classList.remove("wait"); btn.disabled = false;
 }
+
+const bump = (id, n) => { const t = items.find((x) => x.id === id); if (t) t.remaining += n; }; // 정원 표시를 직접 증감
 
 // 확인창 (아래에서 올라옴)
 let sheetFrom = null;
@@ -328,12 +328,18 @@ function openSheet(type, id, from) {
   $("#sheetMsg").textContent = "";
   const ok = $("#sheetOk");
   ok.textContent = C[1]; ok.disabled = false; ok.classList.remove("wait"); ok.classList.toggle("bad", type === "cancel");
-  ok.onclick = () => act(ok, C[2], async () => {
-    if (type === "cancel") await api("/api/reserve", { method: "DELETE" });
-    else await api("/api/reserve", { method: "POST", body: JSON.stringify({ screeningId: id }) });
-    closeSheet(true);
-    say(C[3]);
-  }, true);
+  ok.onclick = async () => {
+    let sold = false;
+    await act(ok, C[2], async () => {
+      try {
+        if (type === "cancel") { await api("/api/reserve", { method: "DELETE" }); bump(mine, 1); mine = null; }
+        else { await api("/api/reserve", { method: "POST", body: JSON.stringify({ screeningId: id }) }); bump(mine, 1); bump(id, -1); mine = id; }
+      } catch (e) { if (e.status === 409) { sold = true; s.remaining = 0; } throw e; } // 매진이면 화면에도 매진 표시
+      closeSheet(true);
+      say(C[3]);
+    }, true);
+    if (sold) ok.disabled = true;
+  };
   $("main").inert = true;
   document.documentElement.classList.add("noscroll");
   $("#sheetWrap").classList.add("open");
@@ -359,15 +365,14 @@ $("#loginForm").onsubmit = (e) => {
     const d = await api("/api/login", { method: "POST", body: JSON.stringify({ studentId: $("#sid").value, code: $("#code").value }) });
     token = d.token; localStorage.setItem("token", token); localStorage.setItem("name", d.name);
     showUser(); say("");
+    await load();
   });
 };
 $("#logoutBtn").onclick = () => {
   if (!TEST_MODE) return logout();
-  testUser = newId(); localStorage.setItem("testUser", testUser); showUser(); load(); // 새 학생인 척 전환
+  testUser = newId(); localStorage.setItem("testUser", testUser); mine = null; showUser(); sig = ""; draw(); // 새 학생인 척 전환
 };
-showUser(); load();
-setInterval(() => { if (!document.hidden) load(); }, 30000); // 화면이 보일 때만 30초마다 갱신 (DB 읽기 절약)
-document.addEventListener("visibilitychange", () => { if (!document.hidden) load(); });
+showUser(); load(); // 정원은 새로고침해야 다시 불러옴
 </script>
 </body>
 </html>
