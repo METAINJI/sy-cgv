@@ -53,6 +53,7 @@ button:disabled,button.line:disabled,button.bad:disabled{border-color:var(--line
 ul{margin:0;padding:0;list-style:none;border-top:1px solid var(--line)}
 .item{position:relative;display:flex;align-items:center;gap:16px;padding:14px 0;border-bottom:1px solid var(--line)}
 .item.drag{z-index:2;background:var(--hl)}
+#rows,.item{overflow-anchor:none}
 body.dragging{user-select:none;cursor:grabbing}
 .thumb{display:block;flex:none;width:44px;aspect-ratio:2/3;border-radius:3px;background:var(--ph);object-fit:cover}
 .meta{display:flex;flex:1;flex-direction:column;min-width:0;font-size:.9rem}
@@ -177,14 +178,18 @@ function imgErr(img) { // 이미지가 안 뜨면 목록에 표시
 // 순서 변경 (점 6개 아이콘을 끌어서 이동, [순서 저장]을 눌러야 서버에 반영)
 let drag = null;
 const calm = () => matchMedia("(prefers-reduced-motion:reduce)").matches;
-function flip(el, change) { // 밀려나는 항목이 부드럽게 자리를 옮기도록
-  const t0 = el.getBoundingClientRect().top;
-  change();
-  const dy = t0 - el.getBoundingClientRect().top;
-  if (!dy || calm()) return;
-  el.style.transition = "none"; el.style.transform = `translateY(${dy}px)`;
+function slide(el, from) { // from(px) 위치에서 제자리로 부드럽게 이동
+  if (!from || calm()) return;
+  clearTimeout(el._t);
+  el.style.transition = "none"; el.style.transform = `translateY(${from}px)`;
   el.getBoundingClientRect();
   el.style.transition = "transform .15s"; el.style.transform = "";
+  el._t = setTimeout(() => (el.style.transition = ""), 170); // 끝나면 transition 제거 (끌 때 지연 방지)
+}
+function flip(el, change) { // 자리가 바뀐 항목이 튀지 않고 이동
+  const t0 = el.getBoundingClientRect().top;
+  change();
+  slide(el, t0 - el.getBoundingClientRect().top);
 }
 function commit() { // 화면 순서를 data에 반영
   const rows = [...$("#rows").children];
@@ -197,24 +202,28 @@ function commit() { // 화면 순서를 data에 반영
 }
 function dragStep() {
   const d = drag; if (!d) return;
-  const li = d.li, ul = li.parentNode, mid = (el) => { const r = el.getBoundingClientRect(); return r.top + r.height / 2; };
-  const v = d.y < 70 ? -12 : d.y > innerHeight - 70 ? 12 : 0; // 화면 가장자리에서 자동 스크롤
-  if (v) { const b = scrollY; scrollBy(0, v); d.startY -= scrollY - b; }
+  const li = d.li, ul = li.parentNode, c = (el) => el.offsetTop + el.offsetHeight / 2; // 애니메이션과 무관한 레이아웃 기준
+  const edge = 60, top = d.y < edge, bot = d.y > innerHeight - edge;
+  if (top || bot) { // 가장자리에서 자동 스크롤 (가까울수록 빠르게)
+    const k = Math.min(1, top ? (edge - d.y) / edge : (d.y - innerHeight + edge) / edge);
+    const b = scrollY; scrollBy(0, Math.ceil(k * 14) * (top ? -1 : 1)); d.startY -= scrollY - b;
+  }
   for (;;) {
-    li.style.transform = `translateY(${d.y - d.startY}px)`;
-    const p = li.previousElementSibling, n = li.nextElementSibling, m = mid(li);
-    if (p && m < mid(p)) { flip(p, () => ul.insertBefore(li, p)); d.startY -= p.offsetHeight; }
-    else if (n && m > mid(n)) { flip(n, () => ul.insertBefore(n, li)); d.startY += n.offsetHeight; }
+    const m = c(li) + d.y - d.startY, p = li.previousElementSibling, n = li.nextElementSibling;
+    if (p && m < c(p)) { flip(p, () => ul.insertBefore(li, p)); d.startY -= p.offsetHeight; }
+    else if (n && m > c(n)) { flip(n, () => ul.insertBefore(n, li)); d.startY += n.offsetHeight; }
     else break;
   }
+  li.style.transform = `translateY(${d.y - d.startY}px)`;
   requestAnimationFrame(dragStep);
 }
 function endDrag() {
   const d = drag; if (!d) return;
   drag = null;
   d.g.onpointermove = d.g.onpointerup = d.g.onpointercancel = null;
-  d.li.style.transition = calm() ? "" : "transform .15s"; d.li.style.transform = "";
-  setTimeout(() => (d.li.style.transition = ""), 160);
+  const dy = d.y - d.startY;
+  d.li.style.transform = "";
+  slide(d.li, dy); // 놓은 자리에서 제 자리로 안착
   d.li.classList.remove("drag"); document.body.classList.remove("dragging");
   commit();
 }
@@ -222,11 +231,13 @@ $("#rows").addEventListener("pointerdown", (e) => {
   const g = e.target.closest(".grip");
   if (!g || busy || drag || e.button > 0) return;
   e.preventDefault();
-  drag = { g, li: g.closest("li"), y: e.clientY, startY: e.clientY };
+  const li = g.closest("li");
+  clearTimeout(li._t); li.style.transition = "none"; // 이전 이동 효과가 남아 끌림이 지연되지 않도록
+  drag = { g, li, y: e.clientY, startY: e.clientY };
   g.setPointerCapture(e.pointerId);
   g.onpointermove = (ev) => { drag.y = ev.clientY; };
   g.onpointerup = g.onpointercancel = endDrag;
-  drag.li.classList.add("drag"); document.body.classList.add("dragging");
+  li.classList.add("drag"); document.body.classList.add("dragging");
   requestAnimationFrame(dragStep);
 });
 $("#rows").addEventListener("keydown", (e) => { // 키보드: 아이콘에 포커스 후 위/아래 방향키
