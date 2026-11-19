@@ -6,112 +6,163 @@
 <meta name="robots" content="noindex">
 <title>관리자 대시보드</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<script>try{var m=localStorage.getItem("theme");document.documentElement.dataset.theme=m==="dark"||m==="light"?m:matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light"}catch(e){}</script>
 <style>
-:root{--bg:#fff;--ink:#111827;--mut:#6b7280;--line:#e5e7eb;--bad:#b91c1c;--ph:#2a2d34;--hl:#f3f4f6}
-@media (prefers-color-scheme:dark){:root{--bg:#101114;--ink:#e7e8ea;--mut:#9aa0a8;--line:#272a30;--bad:#f87171;--ph:#1b1d22;--hl:#1b1d22}}
+:root{color-scheme:light;--bg:#fff;--ink:#111827;--mut:#6b7280;--line:#e5e7eb;--hl:#f3f4f6;--bad:#b91c1c;--ph:#2a2d34;--pad:max(16px,calc((100vw - 960px) / 2))}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#101114;--ink:#e7e8ea;--mut:#9aa0a8;--line:#272a30;--hl:#1b1d22;--bad:#f87171;--ph:#1b1d22}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 "Noto Sans KR",system-ui,sans-serif;word-break:keep-all;overflow-wrap:break-word}
-main{max-width:880px;margin:0 auto;padding:32px max(24px,env(safe-area-inset-right)) 80px max(24px,env(safe-area-inset-left))}
+main{padding-bottom:64px}
 button,input,textarea{touch-action:manipulation}
-:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+:focus-visible{outline:2px solid var(--ink);outline-offset:-2px}
 .mut{color:var(--mut)}
-a{color:var(--mut);font-size:.88rem}
+.wrap{padding-left:max(var(--pad),env(safe-area-inset-left));padding-right:max(var(--pad),env(safe-area-inset-right))}
+a{color:var(--mut);font-size:.88rem;white-space:nowrap}
 a:hover{color:var(--ink)}
 
 /* 상단 */
-h1{margin:0;font-size:1.25rem;font-weight:700;letter-spacing:-.01em;line-height:44px}
-.sub{margin-top:16px;border-bottom:1px solid var(--line)}
-.sub span{display:inline-block;padding:10px 2px;margin-bottom:-1px;border-bottom:2px solid var(--ink);font-size:.95rem;font-weight:700}
-.lead{margin:20px 0 0;font-size:.9rem}
-h2{margin:40px 0 12px;font-size:1.05rem;font-weight:700}
-#msg{min-height:1.6em;margin:16px 0 0;color:var(--mut);font-size:.88rem}
+.top{display:flex;justify-content:space-between;align-items:center;min-height:56px}
+h1{margin:0;font-size:1.25rem;font-weight:700;letter-spacing:-.01em}
+.sub{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.cur{padding:12px 2px;margin-bottom:-1px;border-bottom:2px solid var(--ink);font-size:.95rem;font-weight:700}
+.tools{display:flex;align-items:center;gap:16px}
+.theme{position:relative}
+.theme>button{display:grid;place-items:center;width:44px;padding:0}
+.themeMenu{position:absolute;right:0;top:100%;z-index:30;min-width:140px;border:1px solid var(--line);background:var(--bg)}
+.themeMenu button{display:flex;justify-content:space-between;align-items:center;gap:16px;width:100%;min-height:44px;padding:0 16px;border:0;border-radius:0;background:none;color:var(--ink);font:inherit;font-size:.88rem;text-align:left;white-space:nowrap;cursor:pointer}
+.themeMenu button+button{border-top:1px solid var(--line)}
+.themeMenu button[aria-pressed="true"]::after{content:"✓"}
+.themeMenu button:hover{background:var(--hl)}
+.lead{margin:16px 0 0;font-size:.9rem}
+h2{margin:32px 0 8px;font-size:1.05rem;font-weight:700}
+.note{margin:0 0 12px;font-size:.82rem}
+#msg{min-height:1.6em;margin:12px 0 0;color:var(--mut);font-size:.88rem}
 
-/* 입력 */
-label{display:block;margin-bottom:2px;color:var(--mut);font-size:.82rem}
-input,textarea{width:100%;padding:9px 2px;border:0;border-bottom:1px solid var(--line);border-radius:0;background:none;color:var(--ink);font:inherit}
-input{min-height:44px}
-textarea{resize:vertical}
-input:focus,textarea:focus{outline:none;border-bottom-color:var(--ink)}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px 24px;margin-bottom:8px}
-.full{grid-column:1/-1}
-
-/* 버튼 */
-button{min-height:44px;padding:0 24px;border:1px solid var(--ink);border-radius:999px;background:none;color:var(--ink);font:inherit;font-size:.9rem;font-weight:500;cursor:pointer}
-button.line{border-color:var(--line)}
-button.bad{border-color:var(--bad);color:var(--bad)}
-button:disabled,button.line:disabled,button.bad:disabled{border-color:var(--line);color:var(--mut);cursor:wait}
+/* 버튼 (모서리 없이 가로로 꽉 차게) */
+button{min-height:48px;padding:0 20px;border:0;border-radius:0;background:none;color:var(--ink);font:inherit;font-size:.92rem;font-weight:500;white-space:nowrap;cursor:pointer}
+button.solid{background:var(--ink);color:var(--bg)}
+button.bad{color:var(--bad)}
+button.txt{min-height:44px;padding:0 4px;color:var(--mut);font-size:.88rem}
+button.block{display:block;width:100%;min-height:52px;margin-top:24px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+button:disabled{color:var(--mut);cursor:wait}
+button.solid:disabled{background:var(--line)}
 @media (hover:hover){
-  button:hover:not(:disabled){background:var(--ink);color:var(--bg)}
-  button.bad:hover:not(:disabled){background:var(--bad);color:var(--bg)}
-  button.grip:hover:not(:disabled){background:none;color:var(--ink)}
+  button:hover:not(:disabled):not(.solid):not(.grip):not(.txt){background:var(--hl)}
+  button.txt:hover:not(:disabled){color:var(--ink)}
+  button.solid:hover:not(:disabled){opacity:.9}
 }
-.bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:16px 0}
-.bar input{width:240px}
 
-/* 영화 목록 */
-ul{margin:0;padding:0;list-style:none;border-top:1px solid var(--line)}
-.item{position:relative;display:flex;align-items:center;gap:16px;padding:14px 0;border-bottom:1px solid var(--line)}
+/* 로그인 */
+.login{display:grid;grid-template-columns:1fr auto;margin:16px max(var(--pad),env(safe-area-inset-right)) 0 max(var(--pad),env(safe-area-inset-left));border:1px solid var(--line)}
+.login input{min-width:0;height:52px;padding:0 16px;border:0;border-right:1px solid var(--line);border-radius:0;background:none;color:var(--ink);font:inherit}
+.login input:focus{outline:none;background:var(--hl)}
+.login button{height:52px;padding:0 28px}
+
+/* 등록 양식 (칸이 선으로 나뉘고 아래 버튼은 가로로 꽉 참) */
+.spec{display:grid;grid-template-columns:1fr 1fr;max-width:960px;margin:0 auto;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.cell{min-width:0;padding:10px 16px 6px;border-bottom:1px solid var(--line)}
+.cell:nth-child(odd):not(.full){border-right:1px solid var(--line)}
+.cell:focus-within{background:var(--hl)}
+.full{grid-column:1/-1}
+label{display:block;color:var(--mut);font-size:.78rem}
+input,textarea{display:block;width:100%;min-height:36px;padding:4px 0;border:0;border-radius:0;background:none;color:var(--ink);font:inherit}
+textarea{resize:vertical}
+.cell input:focus,.cell textarea:focus{outline:none}
+.hint{margin:0 0 4px;color:var(--mut);font-size:.82rem}
+.acts{grid-column:1/-1;display:flex}
+.acts button{flex:1;min-height:52px}
+.acts button+button{border-left:1px solid var(--line)}
+
+/* 순서 저장 바 */
+.order{display:flex;flex-wrap:wrap;align-items:stretch;padding-right:max(0px,calc(var(--pad) - 16px));border-top:1px solid var(--line);background:var(--hl)}
+.order span{flex:1;min-width:200px;align-self:center;padding:12px 16px 12px max(var(--pad),env(safe-area-inset-left));color:var(--mut);font-size:.88rem}
+.order button{border-left:1px solid var(--line)}
+
+/* 영화 목록 (줄이 화면 양끝까지, 수정/삭제는 줄 오른쪽 끝에 붙임) */
+ul{margin:0;padding:0;list-style:none}
+#rows{border-top:1px solid var(--line)}
+.item{position:relative;display:flex;align-items:stretch;padding-right:max(0px,calc(var(--pad) - 16px));border-bottom:1px solid var(--line)}
 .item.drag{z-index:2;background:var(--hl)}
 #rows,.item{overflow-anchor:none}
 body.dragging{user-select:none;cursor:grabbing}
+.imain{display:flex;flex:1;min-width:0;align-items:center;gap:14px;padding:12px 12px 12px max(calc(var(--pad) - 10px),6px)}
 .thumb{display:block;flex:none;width:44px;aspect-ratio:2/3;border-radius:3px;background:var(--ph);object-fit:cover}
+.thumb.err{display:grid;place-items:center;border:1px solid var(--bad);background:none;color:var(--bad);font-size:.8rem;font-weight:700}
 .meta{display:flex;flex:1;flex-direction:column;min-width:0;font-size:.9rem}
 .meta strong{font-size:1rem;overflow-wrap:anywhere}
-.btns{display:flex;flex:none;gap:8px}
 .idx{flex:none;width:1.4em;text-align:center;font-size:.85rem}
-.thumb.err{display:grid;place-items:center;border:1px solid var(--bad);background:none;color:var(--bad);font-size:.8rem;font-weight:700}
-button.grip{display:grid;place-items:center;flex:none;min-width:32px;min-height:44px;padding:0;border:0;border-radius:6px;background:none;color:var(--mut);cursor:grab;touch-action:none;user-select:none;-webkit-touch-callout:none}
+.btns{display:flex;flex:none}
+.btns button{min-width:72px;border-left:1px solid var(--line)}
+button.grip{display:grid;place-items:center;flex:none;min-width:32px;min-height:44px;padding:0;border-radius:6px;color:var(--mut);cursor:grab;touch-action:none;user-select:none;-webkit-touch-callout:none}
 button.grip:disabled{cursor:default;opacity:.4}
-.hint{margin:4px 0 0;color:var(--mut);font-size:.82rem}
-.order span{flex:1 1 100%;color:var(--mut);font-size:.88rem}
 
+@media (max-width:720px){
+  .login{margin-left:0;margin-right:0;border-left:0;border-right:0}
+  .login input{padding-left:max(16px,env(safe-area-inset-left))}
+  .spec{grid-template-columns:1fr}
+  .cell:nth-child(odd):not(.full){border-right:0}
+}
 @media (max-width:520px){
-  main{padding-top:20px;padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right))}
-  .bar input{flex:1 1 100%;width:100%}
-  #loginForm button{flex:1 1 100%}
-  .item{flex-wrap:wrap}
-  .btns{width:100%}
+  .order span{flex-basis:100%}
+  .order button{flex:1;border-top:1px solid var(--line)}
+  .order button:first-of-type{border-left:0}
+  .item{flex-wrap:wrap;padding-right:0}
+  .btns{width:100%;border-top:1px solid var(--line)}
   .btns button{flex:1}
+  .btns button:first-child{border-left:0}
 }
 </style>
 </head>
 <body>
-<main>
+<header class="top wrap">
   <h1>관리자 대시보드</h1>
-  <nav class="sub"><span>영화 관리</span></nav>
-  <p class="lead mut">영화 등록과 수정, 반 이름 설정, 예매 명단 내려받기를 할 수 있습니다.</p>
+  <div class="theme">
+        <button class="txt" id="themeBtn" type="button" aria-label="화면 모드" title="화면 모드" aria-expanded="false"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/></svg></button>
+        <div class="themeMenu" id="themeMenu" role="group" aria-label="화면 모드" hidden>
+          <button type="button" data-mode="system">기기 설정</button>
+          <button type="button" data-mode="light">라이트</button>
+          <button type="button" data-mode="dark">다크</button>
+        </div>
+      </div>
+</header>
+<nav class="sub wrap">
+  <span class="cur" aria-current="page">영화 관리</span>
+  <div class="tools" id="tools" hidden>
+    <a href="index.html">예매 페이지 보기</a>
+    <button class="txt" id="logoutBtn" type="button">로그아웃</button>
+  </div>
+</nav>
 
-  <form class="bar" id="loginForm">
+<main>
+  <p class="lead mut wrap">영화 등록과 수정, 반 이름 설정, 예매 명단 내려받기를 할 수 있습니다.</p>
+
+  <form class="login" id="loginForm">
     <input id="pw" type="password" placeholder="관리자 비밀번호" autocomplete="current-password" aria-label="관리자 비밀번호" required>
-    <button>로그인</button>
+    <button class="solid">로그인</button>
   </form>
-  <p id="msg" role="status"></p>
+  <p class="wrap" id="msg" role="status"></p>
 
   <div id="panel" hidden>
-    <div class="bar"><button class="line" id="logoutBtn" type="button">로그아웃</button><a href="index.html">예매 페이지 보기</a></div>
-
-    <h2 id="formTitle">영화 등록</h2>
-    <form id="f">
-      <div class="grid">
-        <div><label for="title">영화 제목</label><input id="title" required maxlength="100"></div>
-        <div><label for="room">반 이름(상영 장소)</label><input id="room" placeholder="예: 2반 교실" maxlength="50"></div>
-        <div><label for="start_at">상영 시간</label><input id="start_at" placeholder="예: 12/18 5교시" maxlength="50"></div>
-        <div><label for="capacity">정원</label><input id="capacity" type="number" min="1" max="500" value="30" required></div>
-        <div class="full"><label for="poster_url">이미지 링크 (https://로 시작)</label><input id="poster_url" type="url" placeholder="https://..." maxlength="1000"><p class="hint" id="posterHint" aria-live="polite"></p></div>
-        <div class="full"><label for="description">한 줄 소개</label><textarea id="description" rows="2" maxlength="500"></textarea></div>
-      </div>
-      <div class="bar"><button id="saveBtn">등록</button><button class="line" id="resetBtn" type="button" hidden>수정 취소</button></div>
+    <h2 class="wrap" id="formTitle">영화 등록</h2>
+    <form class="spec" id="f">
+      <div class="cell"><label for="title">영화 제목</label><input id="title" required maxlength="100"></div>
+      <div class="cell"><label for="room">반 이름(상영 장소)</label><input id="room" placeholder="예: 2반 교실" maxlength="50"></div>
+      <div class="cell"><label for="start_at">상영 시간</label><input id="start_at" placeholder="예: 12/18 5교시" maxlength="50"></div>
+      <div class="cell"><label for="capacity">정원</label><input id="capacity" type="number" min="1" max="500" value="30" required></div>
+      <div class="cell full"><label for="poster_url">이미지 링크 (https://로 시작)</label><input id="poster_url" type="url" placeholder="https://..." maxlength="1000"><p class="hint" id="posterHint" aria-live="polite"></p></div>
+      <div class="cell full"><label for="description">한 줄 소개</label><textarea id="description" rows="2" maxlength="500"></textarea></div>
+      <div class="acts"><button class="solid" id="saveBtn">등록</button><button id="resetBtn" type="button" hidden>수정 취소</button></div>
     </form>
 
-    <h2>등록된 영화</h2>
-    <p class="hint">왼쪽 점 6개 아이콘을 끌어서 순서를 바꾸면 예매 화면에도 같은 순서로 보입니다.</p>
-    <div class="bar order" id="orderBar" hidden>
+    <h2 class="wrap">등록된 영화</h2>
+    <p class="note mut wrap">왼쪽 점 6개 아이콘을 끌어서 순서를 바꾸면 예매 화면에도 같은 순서로 보입니다.</p>
+    <div class="order" id="orderBar" hidden>
       <span>순서를 바꿨습니다. 저장해야 예매 화면에 반영됩니다.</span>
-      <button id="orderSave" type="button">순서 저장</button><button class="line" id="orderUndo" type="button">되돌리기</button>
+      <button class="solid" id="orderSave" type="button">순서 저장</button><button id="orderUndo" type="button">되돌리기</button>
     </div>
     <ul id="rows"></ul>
-    <div class="bar"><button class="line" id="csvBtn" type="button">예매 명단 CSV 내려받기</button></div>
+    <button class="block" id="csvBtn" type="button">예매 명단 CSV 내려받기</button>
   </div>
 </main>
 
@@ -143,7 +194,7 @@ async function api(path, opts = {}) {
   if (!r.ok) throw new Error(d.error || "오류가 발생했습니다.");
   return d;
 }
-function show(on) { $("#panel").hidden = !on; $("#loginForm").hidden = on; }
+function show(on) { $("#panel").hidden = !on; $("#loginForm").hidden = on; $("#tools").hidden = !on; }
 function logout(m = "") { dirty = false; pw = ""; sessionStorage.removeItem("adminPw"); show(false); say(m); }
 
 async function load() {
@@ -162,14 +213,15 @@ async function load() {
 function renderRows() {
   $("#orderBar").hidden = !dirty;
   $("#rows").innerHTML = data.length ? data.map((s, i) => `<li class="item" data-id="${s.id}">
-    <button class="grip" type="button" aria-label="순서 이동 (끌어서 이동, 키보드는 위/아래 방향키)"><svg width="10" height="16" viewBox="0 0 10 16" fill="currentColor" aria-hidden="true"><circle cx="2" cy="2" r="1.6"/><circle cx="8" cy="2" r="1.6"/><circle cx="2" cy="8" r="1.6"/><circle cx="8" cy="8" r="1.6"/><circle cx="2" cy="14" r="1.6"/><circle cx="8" cy="14" r="1.6"/></svg></button>
-    <span class="idx mut" aria-hidden="true">${i + 1}</span>
-    ${s.poster_url ? `<img class="thumb" src="${esc(s.poster_url)}" alt="" referrerpolicy="no-referrer" onerror="imgErr(this)">` : `<span class="thumb"></span>`}
-    <div class="meta"><strong>${esc(s.title)}</strong>
-      <span class="mut">${esc([s.room, s.start_at].filter(Boolean).join(", ")) || "반, 시간 미정"}</span>
-      <span class="mut">예매 ${s.reserved}/${s.capacity}명</span></div>
-    <div class="btns"><button class="line" onclick="edit(${s.id})">수정</button><button class="bad" onclick="del(${s.id}, this)">삭제</button></div></li>`).join("")
-    : `<li class="item mut">아직 등록된 영화가 없습니다. 위 양식으로 첫 영화를 등록하세요.</li>`;
+    <div class="imain">
+      <button class="grip" type="button" aria-label="순서 이동 (끌어서 이동, 키보드는 위/아래 방향키)"><svg width="10" height="16" viewBox="0 0 10 16" fill="currentColor" aria-hidden="true"><circle cx="2" cy="2" r="1.6"/><circle cx="8" cy="2" r="1.6"/><circle cx="2" cy="8" r="1.6"/><circle cx="8" cy="8" r="1.6"/><circle cx="2" cy="14" r="1.6"/><circle cx="8" cy="14" r="1.6"/></svg></button>
+      <span class="idx mut" aria-hidden="true">${i + 1}</span>
+      ${s.poster_url ? `<img class="thumb" src="${esc(s.poster_url)}" alt="" referrerpolicy="no-referrer" onerror="imgErr(this)">` : `<span class="thumb"></span>`}
+      <div class="meta"><strong>${esc(s.title)}</strong>
+        <span class="mut">${esc([s.room, s.start_at].filter(Boolean).join(", ")) || "반, 시간 미정"}</span>
+        <span class="mut">예매 ${s.reserved}/${s.capacity}명</span></div></div>
+    <div class="btns"><button onclick="edit(${s.id})">수정</button><button class="bad" onclick="del(${s.id}, this)">삭제</button></div></li>`).join("")
+    : `<li class="item"><div class="imain mut">아직 등록된 영화가 없습니다. 위 양식으로 첫 영화를 등록하세요.</div></li>`;
 }
 function imgErr(img) { // 이미지가 안 뜨면 목록에 표시
   const s = document.createElement("span");
@@ -329,6 +381,25 @@ $("#loginForm").onsubmit = (e) => {
   });
 };
 $("#logoutBtn").onclick = () => logout();
+// 화면 모드 (기기 설정 / 라이트 / 다크)
+const dq = matchMedia("(prefers-color-scheme:dark)"), menu = $("#themeMenu"), tbtn = $("#themeBtn");
+function applyTheme() {
+  const saved = localStorage.getItem("theme"), m = saved === "light" || saved === "dark" ? saved : "system";
+  document.documentElement.dataset.theme = m === "system" ? (dq.matches ? "dark" : "light") : m;
+  menu.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.mode === m));
+}
+const setMenu = (open) => { menu.hidden = !open; tbtn.setAttribute("aria-expanded", open); };
+tbtn.onclick = () => { setMenu(menu.hidden); if (!menu.hidden) menu.querySelector('[aria-pressed="true"]').focus(); };
+menu.onclick = (e) => {
+  const b = e.target.closest("button"); if (!b) return;
+  if (b.dataset.mode === "system") localStorage.removeItem("theme"); else localStorage.setItem("theme", b.dataset.mode);
+  applyTheme(); setMenu(false); tbtn.focus();
+};
+document.addEventListener("click", (e) => { if (!menu.hidden && !e.target.closest(".theme")) setMenu(false); });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !menu.hidden) { setMenu(false); tbtn.focus(); } });
+dq.addEventListener("change", applyTheme); // 기기 설정이 바뀌면 자동 반영
+applyTheme();
+
 pw ? load() : show(false);
 </script>
 </body>
