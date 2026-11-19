@@ -5,75 +5,97 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>학기말 영화 상영 예매</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<script>try{var m=localStorage.getItem("theme");document.documentElement.dataset.theme=m==="dark"||m==="light"?m:matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light"}catch(e){}</script>
 <style>
-:root{--bg:#fff;--ink:#111827;--mut:#6b7280;--line:#e5e7eb;--ok:#047857;--bad:#b91c1c;--ph:#2a2d34;--w:clamp(168px,56vw,230px);--gap:16px}
-@media (prefers-color-scheme:dark){:root{--bg:#101114;--ink:#e7e8ea;--mut:#9aa0a8;--line:#272a30;--ok:#34d399;--bad:#f87171;--ph:#1b1d22}}
+:root{color-scheme:light;--bg:#fff;--ink:#111827;--mut:#6b7280;--line:#e5e7eb;--hl:#f3f4f6;--ok:#047857;--bad:#b91c1c;--ph:#2a2d34;--w:clamp(168px,56vw,260px);--gap:16px;--pad:max(16px,calc((100vw - 960px) / 2));--dock:56px}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#101114;--ink:#e7e8ea;--mut:#9aa0a8;--line:#272a30;--hl:#1b1d22;--ok:#34d399;--bad:#f87171;--ph:#1b1d22}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 "Noto Sans KR",system-ui,sans-serif;word-break:keep-all;overflow-wrap:break-word}
-main{max-width:960px;margin:0 auto;padding:32px max(24px,env(safe-area-inset-right)) 80px max(24px,env(safe-area-inset-left))}
+main{padding-bottom:48px}
+body.hasDock main{padding-bottom:calc(var(--dock) + env(safe-area-inset-bottom) + 24px)}
 button,input{touch-action:manipulation}
-:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+:focus-visible{outline:2px solid var(--ink);outline-offset:-2px}
 .mut{color:var(--mut)}
+.wrap{padding-left:max(var(--pad),env(safe-area-inset-left));padding-right:max(var(--pad),env(safe-area-inset-right))}
 
 /* 상단 */
-.top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:0 12px;min-height:44px}
-h1{font-size:1.25rem;font-weight:700;margin:0;letter-spacing:-.01em;white-space:nowrap}
+.top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:0 12px;min-height:56px}
+h1{margin:0;font-size:1.25rem;font-weight:700;letter-spacing:-.01em;white-space:nowrap}
 .who{display:flex;flex-wrap:wrap;align-items:center;gap:0 12px;font-size:.9rem}
-.txt{min-height:44px;padding:0 4px;border:0;background:none;color:var(--mut);font:inherit;font-size:.88rem;cursor:pointer;white-space:nowrap}
+.txt{min-height:44px;padding:0 4px;border:0;background:none;color:var(--mut);font:inherit;font-size:.88rem;white-space:nowrap;cursor:pointer}
 .txt:hover{color:var(--ink)}
-.sub{display:flex;justify-content:space-between;align-items:center;margin-top:16px;border-bottom:1px solid var(--line)}
-.cur{padding:10px 2px;margin-bottom:-1px;border-bottom:2px solid var(--ink);font-size:.95rem;font-weight:700}
-.lead{margin:20px 0 0;font-size:.9rem}
+.topR{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:0 4px}
+.theme{position:relative}
+.theme>button{display:grid;place-items:center;width:44px;padding:0}
+.themeMenu{position:absolute;right:0;top:100%;z-index:30;min-width:140px;border:1px solid var(--line);background:var(--bg)}
+.themeMenu button{display:flex;justify-content:space-between;align-items:center;gap:16px;width:100%;min-height:44px;padding:0 16px;border:0;border-radius:0;background:none;color:var(--ink);font:inherit;font-size:.88rem;text-align:left;white-space:nowrap;cursor:pointer}
+.themeMenu button+button{border-top:1px solid var(--line)}
+.themeMenu button[aria-pressed="true"]::after{content:"✓"}
+.themeMenu button:hover{background:var(--hl)}
+.sub{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.cur{padding:12px 2px;margin-bottom:-1px;border-bottom:2px solid var(--ink);font-size:.95rem;font-weight:700}
+.lead{margin:16px 0 0;font-size:.9rem}
+.msg{min-height:1.6em;margin:16px 0 8px;text-align:center;color:var(--mut);font-size:.88rem}
+
+/* 버튼 (모서리 없이 가로로 꽉 차게) */
+.pill{display:block;min-height:48px;padding:0 20px;border:0;border-radius:0;background:none;color:var(--ink);font:inherit;font-size:.92rem;font-weight:500;white-space:nowrap;cursor:pointer}
+.pill.bad{color:var(--bad)}
+.pill:disabled{color:var(--mut);cursor:not-allowed}
+.pill.wait:disabled{cursor:wait}
 
 /* 로그인 */
-.login{display:flex;flex-wrap:wrap;align-items:center;gap:8px 20px;margin-top:20px}
-.login input{width:140px;padding:9px 2px;border:0;border-bottom:1px solid var(--line);border-radius:0;background:none;color:var(--ink);font:inherit}
-.login .pill{margin:0}
-.login input:focus{outline:none;border-bottom-color:var(--ink)}
-.msg{min-height:1.6em;margin:20px 0 8px;text-align:center;color:var(--mut);font-size:.88rem}
+.login{display:grid;grid-template-columns:1fr 1fr auto;margin:16px max(var(--pad),env(safe-area-inset-right)) 0 max(var(--pad),env(safe-area-inset-left));border:1px solid var(--line)}
+.login input{min-width:0;height:52px;padding:0 16px;border:0;border-right:1px solid var(--line);border-radius:0;background:none;color:var(--ink);font:inherit}
+.login input:focus{outline:none;background:var(--hl)}
+.login .pill{height:52px;padding:0 28px;background:var(--ink);color:var(--bg)}
+.login .pill:disabled{opacity:.6;color:var(--bg)}
 
-/* 버튼 */
-.pill{min-width:128px;min-height:44px;margin-top:14px;padding:0 28px;white-space:nowrap;border:1px solid var(--ink);border-radius:999px;background:none;color:var(--ink);font:inherit;font-size:.9rem;font-weight:500;cursor:pointer}
-.pill.bad{border-color:var(--bad);color:var(--bad)}
-.pill:disabled{border-color:var(--line);color:var(--mut);cursor:not-allowed}
-.pill.wait:disabled{cursor:wait}
-@media (hover:hover){
-  .pill:hover:not(:disabled){background:var(--ink);color:var(--bg)}
-  .pill.bad:hover:not(:disabled){background:var(--bad);color:var(--bg)}
-}
+/* 하단 고정 예매 바 */
+.dock{position:fixed;left:0;right:0;bottom:0;z-index:20;padding-bottom:env(safe-area-inset-bottom);border-top:1px solid var(--line);background:var(--bg);color:var(--ink)}
+.dock.primary{border-top-color:var(--ink);background:var(--ink);color:var(--bg)}
+.dock.cancel{color:var(--bad)}
+.dock.off{color:var(--mut)}
+.dock .pill{width:100%;min-height:var(--dock);background:none;color:inherit;font-size:1rem}
+.dock.primary .pill:disabled{opacity:.55}
 
 /* 확인창 */
 html.noscroll{overflow:hidden}
 .sheetWrap{position:fixed;inset:0;z-index:50;visibility:hidden;transition:visibility 0s .25s}
 .sheetWrap.open{visibility:visible;transition:visibility 0s}
 .backdrop{position:absolute;inset:0;background:rgba(0,0,0,.45);opacity:0;transition:opacity .25s}
-.sheet{position:absolute;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;padding:24px 24px max(24px,env(safe-area-inset-bottom));border:1px solid var(--line);border-bottom:0;border-radius:16px 16px 0 0;background:var(--bg);transform:translateY(100%);transition:transform .25s}
+.sheet{position:absolute;left:0;right:0;bottom:0;border-top:1px solid var(--line);background:var(--bg);transform:translateY(100%);transition:transform .25s}
 .open .backdrop{opacity:1}
 .open .sheet{transform:none}
+.sheetBody{padding-top:24px;padding-bottom:12px}
 .sheetQ{margin:0 0 16px;font-weight:700}
 .sheetInfo{display:flex;align-items:center;gap:16px;padding:16px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
 .sheetInfo .info{flex:1;min-width:0;font-size:.88rem}
 .sheetInfo h2{margin:0;font-size:1rem}
 .sheetInfo .line{justify-content:flex-start}
-.sheetMsg{min-height:1.6em;margin:12px 0 4px;color:var(--bad);font-size:.88rem}
-.sheetBtns{display:flex;flex-direction:column;align-items:stretch}
-.sheetBtns .pill{width:100%;margin:0 0 4px}
-.sheetBtns .txt{align-self:center}
+.sheetMsg{min-height:1.6em;margin:12px 0 0;color:var(--bad);font-size:.88rem}
+.sheetBtns{display:grid;grid-template-columns:1fr 2fr;border-top:1px solid var(--line)}
+.sheetBtns .pill{min-height:calc(var(--dock) + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom);font-size:1rem}
+.sheetBtns .pill:first-child{border-right:1px solid var(--line)}
+#sheetOk{background:var(--ink);color:var(--bg)}
+#sheetOk.bad{background:var(--bad);color:var(--bg)}
+#sheetOk:disabled{background:var(--hl);color:var(--mut)}
+#sheetOk.wait:disabled{background:var(--ink);color:var(--bg);opacity:.6}
+#sheetOk.bad.wait:disabled{background:var(--bad)}
 
-/* 캐러셀 */
-.stage{position:relative}
+/* 캐러셀 (화면 양끝까지) */
+.stage{position:relative;margin-top:8px}
 .track{position:relative;display:flex;align-items:flex-start;gap:var(--gap);margin:0;padding:0 0 4px;list-style:none;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x mandatory;scrollbar-width:none}
 .track::-webkit-scrollbar{display:none}
 .track::before,.track::after{content:"";flex:0 0 calc(50% - var(--w) / 2 - var(--gap))}
 .slide{flex:0 0 var(--w);scroll-snap-align:center;text-align:center}
-.poster{position:relative;display:block;width:100%;min-height:0;aspect-ratio:2/3;padding:0;border:0;border-radius:6px;overflow:hidden;background:var(--ph);cursor:pointer;opacity:.5;transform:scale(.84);transform-origin:50% 100%;transition:transform .25s,opacity .25s}
+.poster{position:relative;display:block;width:100%;min-height:0;aspect-ratio:2/3;padding:0;border:0;border-radius:4px;overflow:hidden;background:var(--ph);cursor:pointer;opacity:.5;transform:scale(.84);transform-origin:50% 100%;transition:transform .25s,opacity .25s}
 .poster::after{content:"";position:absolute;inset:auto 0 0;height:45%;background:linear-gradient(transparent,rgba(0,0,0,.5))}
 .on .poster{opacity:1;transform:none;cursor:default}
 .poster img{display:block;width:100%;height:100%;object-fit:cover}
 .ph{display:flex;align-items:center;justify-content:center;height:100%;padding:16px;color:#e7e8ea;font-weight:700;font-size:1.1rem;text-align:center;word-break:keep-all}
 .no{position:absolute;left:14px;bottom:8px;z-index:1;color:#fff;font-size:3.5rem;font-weight:700;font-style:italic;line-height:1}
-.tag{position:absolute;top:10px;left:10px;z-index:1;padding:2px 8px;border-radius:3px;background:var(--ink);color:var(--bg);font-size:.72rem;font-weight:500;line-height:1.6}
+.tag{position:absolute;top:10px;left:10px;z-index:1;padding:2px 8px;border-radius:2px;background:var(--ink);color:var(--bg);font-size:.72rem;font-weight:500;line-height:1.6}
 .tag.ok{background:var(--ok);color:var(--bg)}
 .t{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;margin:14px 0 0;color:var(--mut);font-size:1.05rem;font-weight:700;line-height:1.4;word-break:keep-all;transition:color .25s}
 .on .t{color:var(--ink)}
@@ -86,50 +108,65 @@ html.noscroll{overflow:hidden}
 .desc{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;margin-top:8px!important;color:var(--mut)}
 .line{display:flex;flex-wrap:wrap;justify-content:center;gap:0 14px}
 .line span{white-space:nowrap}
-.row .line{justify-content:flex-start}
 .arrow{position:absolute;z-index:2;top:calc(var(--w) * .75);transform:translateY(-50%);display:grid;place-items:center;width:40px;height:40px;padding:0;border:1px solid var(--mut);border-radius:50%;background:var(--bg);color:var(--ink);cursor:pointer}
-#prev{left:0}
-#next{right:0}
+#prev{left:max(12px,env(safe-area-inset-left))}
+#next{right:max(12px,env(safe-area-inset-right))}
 .arrow:disabled{opacity:.3;cursor:default}
 @media (hover:none){.arrow{display:none}}
 .count{margin:20px 0 0;text-align:center;font-size:.8rem}
 .empty{padding:48px 0;text-align:center}
 
-/* 리스트형 */
+/* 리스트형 (줄이 화면 양끝까지, 버튼은 줄 오른쪽 끝에 붙임) */
 .rows{margin:0;padding:0;list-style:none;border-top:1px solid var(--line)}
-.row{display:flex;align-items:center;gap:16px;padding:16px 0;border-bottom:1px solid var(--line)}
+.row{display:flex;align-items:stretch;padding-right:max(0px,calc(var(--pad) - 16px));border-bottom:1px solid var(--line)}
+.rowMain{display:flex;flex:1;min-width:0;align-items:center;gap:16px;padding:16px 16px 16px max(var(--pad),env(safe-area-inset-left))}
 .th{flex:none;width:56px;aspect-ratio:2/3;border-radius:4px;overflow:hidden;background:var(--ph)}
 .th .ph{padding:4px;font-size:.7rem}
 .row .info{flex:1;min-width:0;font-size:.88rem}
 .row h2{margin:0;font-size:1rem;font-weight:700}
-.row .pill{flex:none;margin:0}
+.row .line{justify-content:flex-start}
+.row .pill{flex:none;min-width:104px;border-left:1px solid var(--line)}
 
+@media (hover:hover){
+  .row .pill:hover:not(:disabled),.sheetBtns .pill:first-child:hover:not(:disabled){background:var(--hl)}
+}
+@media (max-width:720px){
+  .login{margin-left:0;margin-right:0;grid-template-columns:1fr 1fr;border-left:0;border-right:0}
+  .login input:first-child{padding-left:max(16px,env(safe-area-inset-left))}
+  .login .pill{grid-column:1/-1;border-top:1px solid var(--line)}
+}
 @media (max-width:520px){
-  main{padding-top:20px;padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right))}
-  .login input{flex:1 1 40%;width:auto}
-  .row{flex-wrap:wrap}
-  .row .info{flex:1 1 0}
-  .row .pill{width:100%}
+  .row .pill{min-width:88px}
 }
 @media (prefers-reduced-motion:reduce){.poster,.t,.backdrop,.sheet{transition:none}}
 </style>
 </head>
 <body>
 <main>
-  <header class="top">
+  <header class="top wrap">
     <h1>학기말 영화 상영</h1>
-    <div class="who" id="userBar" hidden>
-      <strong id="who"></strong>
-      <button class="txt" id="logoutBtn" type="button">로그아웃</button>
+    <div class="topR">
+      <div class="who" id="userBar" hidden>
+        <strong id="who"></strong>
+        <button class="txt" id="logoutBtn" type="button">로그아웃</button>
+      </div>
+      <div class="theme">
+        <button class="txt" id="themeBtn" type="button" aria-label="화면 모드" title="화면 모드" aria-expanded="false"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/></svg></button>
+        <div class="themeMenu" id="themeMenu" role="group" aria-label="화면 모드" hidden>
+          <button type="button" data-mode="system">기기 설정</button>
+          <button type="button" data-mode="light">라이트</button>
+          <button type="button" data-mode="dark">다크</button>
+        </div>
+      </div>
     </div>
   </header>
 
-  <nav class="sub">
+  <nav class="sub wrap">
     <span class="cur" aria-current="page">상영작</span>
     <button class="txt" id="viewBtn" type="button">리스트형</button>
   </nav>
 
-  <p class="lead mut">보고 싶은 영화를 한 편 선택해 예매하세요. 예매 후에도 다른 영화로 바꿀 수 있습니다.</p>
+  <p class="lead mut wrap">보고 싶은 영화를 한 편 선택해 예매하세요. 예매 후에도 다른 영화로 바꿀 수 있습니다.</p>
 
   <form class="login" id="loginForm">
     <input id="sid" placeholder="학번" inputmode="numeric" autocomplete="username" aria-label="학번" required>
@@ -137,19 +174,23 @@ html.noscroll{overflow:hidden}
     <button class="pill">로그인</button>
   </form>
 
-  <p class="msg" id="msg" role="status"></p>
+  <p class="msg wrap" id="msg" role="status"></p>
   <div id="view"></div>
 </main>
+
+<div class="dock" id="dock" hidden></div>
 
 <div class="sheetWrap" id="sheetWrap">
   <div class="backdrop" onclick="closeSheet()"></div>
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetQ">
-    <p class="sheetQ" id="sheetQ"></p>
-    <div class="sheetInfo" id="sheetInfo"></div>
-    <p class="sheetMsg" id="sheetMsg" role="alert"></p>
+    <div class="sheetBody wrap">
+      <p class="sheetQ" id="sheetQ"></p>
+      <div class="sheetInfo" id="sheetInfo"></div>
+      <p class="sheetMsg" id="sheetMsg" role="alert"></p>
+    </div>
     <div class="sheetBtns">
+      <button class="pill" type="button" onclick="closeSheet()">닫기</button>
       <button class="pill" id="sheetOk" type="button"></button>
-      <button class="txt" type="button" onclick="closeSheet()">닫기</button>
     </div>
   </div>
 </div>
@@ -215,12 +256,12 @@ function slide(s, i) {
       ${poster(s)}<span class="tagbox">${tagHtml(s)}</span><b class="no">${i + 1}</b>
     </button>
     <h2 class="t">${esc(s.title)}</h2>
-    <div class="more">${meta(s)}${desc(s)}${btn(s)}</div></li>`;
+    <div class="more">${meta(s)}${desc(s)}</div></li>`;
 }
 // 리스트형
 function row(s) {
-  return `<li class="row"><div class="th">${poster(s)}</div>
-    <div class="info"><h2>${esc(s.title)}</h2>${meta(s)}${desc(s)}</div>${btn(s)}</li>`;
+  return `<li class="row"><div class="rowMain"><div class="th">${poster(s)}</div>
+    <div class="info"><h2>${esc(s.title)}</h2>${meta(s)}${desc(s)}</div></div>${btn(s)}</li>`;
 }
 
 function render() {
@@ -259,10 +300,23 @@ function mark() {
   let best = 0, d = Infinity;
   [...t.children].forEach((el, i) => { const x = Math.abs(el.offsetLeft + el.offsetWidth / 2 - mid); if (x < d) { d = x; best = i; } });
   cur = best;
+  dock();
   [...t.children].forEach((el, i) => el.classList.toggle("on", i === best));
   $("#prev").disabled = best === 0;
   $("#next").disabled = best === items.length - 1;
   $("#count").textContent = (best + 1) + " / " + items.length;
+}
+
+// 하단 고정 예매 바 (가운데 영화 기준)
+const dockState = (s) => (!token ? "off" : mine === s.id ? "cancel" : s.remaining <= 0 ? "off" : "primary");
+function dock(force) {
+  const el = $("#dock"), s = view === "card" ? items[cur] : null;
+  el.hidden = !s;
+  document.body.classList.toggle("hasDock", !!s);
+  if (!s) return;
+  const html = btn(s), k = dockState(s) + html;
+  if (!force && el.dataset.k === k) return; // 스크롤 중 불필요한 갱신 방지
+  el.dataset.k = k; el.className = "dock " + dockState(s); el.innerHTML = html;
 }
 
 // 데이터 갱신 (바뀐 게 없으면 다시 그리지 않음)
@@ -273,7 +327,7 @@ function patch() { // 영화 목록이 같으면 화면을 새로 만들지 않�
     const el = els[i];
     if (view === "card") {
       el.querySelector(".tagbox").innerHTML = tagHtml(s);
-      el.querySelector(".more").innerHTML = meta(s) + desc(s) + btn(s);
+      el.querySelector(".more").innerHTML = meta(s) + desc(s);
     } else {
       el.querySelector(".info").innerHTML = `<h2>${esc(s.title)}</h2>${meta(s)}${desc(s)}`;
       el.querySelector(".pill").outerHTML = btn(s);
@@ -285,6 +339,7 @@ function draw() {
   if (s === sig) return;
   sig = s;
   if (items.length && shown === key() && $("#track, .rows")) patch(); else render();
+  dock(true);
 }
 async function load() {
   try {
@@ -340,7 +395,7 @@ function openSheet(type, id, from) {
     }, true);
     if (sold) ok.disabled = true;
   };
-  $("main").inert = true;
+  $("main").inert = true; $("#dock").inert = true;
   document.documentElement.classList.add("noscroll");
   $("#sheetWrap").classList.add("open");
   ok.focus();
@@ -349,13 +404,32 @@ function closeSheet(force) {
   if (busy && !force) return;
   $("#sheetWrap").classList.remove("open");
   document.documentElement.classList.remove("noscroll");
-  $("main").inert = false;
+  $("main").inert = false; $("#dock").inert = false;
   if (sheetFrom && sheetFrom.isConnected) sheetFrom.focus();
   sheetFrom = null;
 }
 const ask = (id, el) => openSheet(mine !== null ? "change" : "reserve", id, el);
 const askCancel = (el) => openSheet("cancel", mine, el);
 document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeSheet(); });
+
+// 화면 모드 (기기 설정 / 라이트 / 다크)
+const dq = matchMedia("(prefers-color-scheme:dark)"), menu = $("#themeMenu"), tbtn = $("#themeBtn");
+function applyTheme() {
+  const saved = localStorage.getItem("theme"), m = saved === "light" || saved === "dark" ? saved : "system";
+  document.documentElement.dataset.theme = m === "system" ? (dq.matches ? "dark" : "light") : m;
+  menu.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.mode === m));
+}
+const setMenu = (open) => { menu.hidden = !open; tbtn.setAttribute("aria-expanded", open); };
+tbtn.onclick = () => { setMenu(menu.hidden); if (!menu.hidden) menu.querySelector('[aria-pressed="true"]').focus(); };
+menu.onclick = (e) => {
+  const b = e.target.closest("button"); if (!b) return;
+  if (b.dataset.mode === "system") localStorage.removeItem("theme"); else localStorage.setItem("theme", b.dataset.mode);
+  applyTheme(); setMenu(false); tbtn.focus();
+};
+document.addEventListener("click", (e) => { if (!menu.hidden && !e.target.closest(".theme")) setMenu(false); });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !menu.hidden) { setMenu(false); tbtn.focus(); } });
+dq.addEventListener("change", applyTheme); // 기기 설정이 바뀌면 자동 반영
+applyTheme();
 
 // 이벤트
 $("#viewBtn").onclick = () => { view = view === "list" ? "card" : "list"; localStorage.setItem("view", view); draw(); };
