@@ -8,16 +8,15 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
 <script>try{var m=localStorage.getItem("theme");document.documentElement.dataset.theme=m==="dark"||m==="light"?m:matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light"}catch(e){}</script>
 <style>
-:root{color-scheme:light;--bg:#fff;--ink:#111827;--mut:#6b7280;--line:#e5e7eb;--hl:#f3f4f6;--bad:#b91c1c;--ph:#2a2d34;--pad:max(16px,calc((100vw - 960px) / 2))}
+:root{color-scheme:light;--bg:#fff;--ink:#111827;--mut:#6b7280;--line:#e5e7eb;--hl:#f3f4f6;--bad:#b91c1c;--ph:#2a2d34;--m:20px}
 :root[data-theme="dark"]{color-scheme:dark;--bg:#101114;--ink:#e7e8ea;--mut:#9aa0a8;--line:#272a30;--hl:#1b1d22;--bad:#f87171;--ph:#1b1d22}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
-body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 "Noto Sans KR",system-ui,sans-serif;word-break:keep-all;overflow-wrap:break-word}
+body{max-width:1000px;margin:0 auto;padding:0 max(var(--m),env(safe-area-inset-right)) 0 max(var(--m),env(safe-area-inset-left));background:var(--bg);color:var(--ink);font:16px/1.65 "Noto Sans KR",system-ui,sans-serif;word-break:keep-all;overflow-wrap:break-word}
 main{padding-bottom:64px}
 button,input,textarea{touch-action:manipulation}
 :focus-visible{outline:2px solid var(--ink);outline-offset:-2px}
 .mut{color:var(--mut)}
-.wrap{padding-left:max(var(--pad),env(safe-area-inset-left));padding-right:max(var(--pad),env(safe-area-inset-right))}
 a{color:var(--mut);font-size:.88rem;white-space:nowrap}
 a:hover{color:var(--ink)}
 
@@ -39,12 +38,12 @@ h2{margin:32px 0 8px;font-size:1.05rem;font-weight:700}
 .note{margin:0 0 12px;font-size:.82rem}
 #msg{min-height:1.6em;margin:12px 0 0;color:var(--mut);font-size:.88rem}
 
-/* 버튼 (모서리 없이 가로로 꽉 차게) */
+/* 버튼 (모서리 없는 평평한 버튼) */
 button{min-height:48px;padding:0 20px;border:0;border-radius:0;background:none;color:var(--ink);font:inherit;font-size:.92rem;font-weight:500;white-space:nowrap;cursor:pointer}
 button.solid{background:var(--ink);color:var(--bg)}
 button.bad{color:var(--bad)}
 button.txt{min-height:44px;padding:0 4px;color:var(--mut);font-size:.88rem}
-button.block{display:block;width:100%;min-height:52px;margin-top:24px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+button.block{display:block;width:100%;min-height:52px;margin-top:12px;border:1px solid var(--line)}
 button:disabled{color:var(--mut);cursor:wait}
 button.solid:disabled{background:var(--line)}
 @media (hover:hover){
@@ -54,13 +53,13 @@ button.solid:disabled{background:var(--line)}
 }
 
 /* 로그인 */
-.login{display:grid;grid-template-columns:1fr auto;margin:16px max(var(--pad),env(safe-area-inset-right)) 0 max(var(--pad),env(safe-area-inset-left));border:1px solid var(--line)}
+.login{display:grid;grid-template-columns:1fr auto;margin-top:16px;border:1px solid var(--line)}
 .login input{min-width:0;height:52px;padding:0 16px;border:0;border-right:1px solid var(--line);border-radius:0;background:none;color:var(--ink);font:inherit}
 .login input:focus{outline:none;background:var(--hl)}
 .login button{height:52px;padding:0 28px}
 
 /* 등록 양식 (칸이 선으로 나뉘고 아래 버튼은 가로로 꽉 참) */
-.spec{display:grid;grid-template-columns:1fr 1fr;max-width:960px;margin:0 auto;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.spec{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line)}
 .cell{min-width:0;padding:10px 16px 6px;border-bottom:1px solid var(--line)}
 .cell:nth-child(odd):not(.full){border-right:1px solid var(--line)}
 .cell:focus-within{background:var(--hl)}
@@ -75,19 +74,20 @@ textarea{resize:vertical}
 .acts button+button{border-left:1px solid var(--line)}
 
 /* 순서 저장 바 */
-.order{display:flex;flex-wrap:wrap;align-items:stretch;padding-right:max(0px,calc(var(--pad) - 16px));border-top:1px solid var(--line);background:var(--hl)}
-.order span{flex:1;min-width:200px;align-self:center;padding:12px 16px 12px max(var(--pad),env(safe-area-inset-left));color:var(--mut);font-size:.88rem}
+.order{display:flex;flex-wrap:wrap;align-items:stretch;margin-bottom:12px;border:1px solid var(--line);background:var(--hl)}
+.order span{flex:1;min-width:200px;align-self:center;padding:12px 16px;color:var(--mut);font-size:.88rem}
 .order button{border-left:1px solid var(--line)}
 
-/* 영화 목록 (줄이 화면 양끝까지, 수정/삭제는 줄 오른쪽 끝에 붙임) */
+/* 영화 목록 (수정/삭제는 줄 오른쪽 끝에 붙임) */
 ul{margin:0;padding:0;list-style:none}
-#rows{border-top:1px solid var(--line)}
-.item{position:relative;display:flex;align-items:stretch;padding-right:max(0px,calc(var(--pad) - 16px));border-bottom:1px solid var(--line)}
+#rows{border:1px solid var(--line)}
+.item{position:relative;display:flex;align-items:stretch;border-bottom:1px solid var(--line)}
+.item:last-child{border-bottom:0}
 .item.drag{z-index:2;background:var(--hl)}
 #rows,.item{overflow-anchor:none}
 body.dragging{user-select:none;cursor:grabbing}
-.imain{display:flex;flex:1;min-width:0;align-items:center;gap:14px;padding:12px 12px 12px max(calc(var(--pad) - 10px),6px)}
-.thumb{display:block;flex:none;width:44px;aspect-ratio:2/3;border-radius:3px;background:var(--ph);object-fit:cover}
+.imain{display:flex;flex:1;min-width:0;align-items:center;gap:14px;padding:12px 12px 12px 8px}
+.thumb{display:block;flex:none;width:44px;aspect-ratio:2/3;border-radius:0;background:var(--ph);object-fit:cover}
 .thumb.err{display:grid;place-items:center;border:1px solid var(--bad);background:none;color:var(--bad);font-size:.8rem;font-weight:700}
 .meta{display:flex;flex:1;flex-direction:column;min-width:0;font-size:.9rem}
 .meta strong{font-size:1rem;overflow-wrap:anywhere}
@@ -98,8 +98,6 @@ button.grip{display:grid;place-items:center;flex:none;min-width:32px;min-height:
 button.grip:disabled{cursor:default;opacity:.4}
 
 @media (max-width:720px){
-  .login{margin-left:0;margin-right:0;border-left:0;border-right:0}
-  .login input{padding-left:max(16px,env(safe-area-inset-left))}
   .spec{grid-template-columns:1fr}
   .cell:nth-child(odd):not(.full){border-right:0}
 }
@@ -107,7 +105,7 @@ button.grip:disabled{cursor:default;opacity:.4}
   .order span{flex-basis:100%}
   .order button{flex:1;border-top:1px solid var(--line)}
   .order button:first-of-type{border-left:0}
-  .item{flex-wrap:wrap;padding-right:0}
+  .item{flex-wrap:wrap}
   .btns{width:100%;border-top:1px solid var(--line)}
   .btns button{flex:1}
   .btns button:first-child{border-left:0}
@@ -115,7 +113,7 @@ button.grip:disabled{cursor:default;opacity:.4}
 </style>
 </head>
 <body>
-<header class="top wrap">
+<header class="top">
   <h1>관리자 대시보드</h1>
   <div class="theme">
         <button class="txt" id="themeBtn" type="button" aria-label="화면 모드" title="화면 모드" aria-expanded="false"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/></svg></button>
@@ -126,7 +124,7 @@ button.grip:disabled{cursor:default;opacity:.4}
         </div>
       </div>
 </header>
-<nav class="sub wrap">
+<nav class="sub">
   <span class="cur" aria-current="page">영화 관리</span>
   <div class="tools" id="tools" hidden>
     <a href="index.html">예매 페이지 보기</a>
@@ -135,16 +133,16 @@ button.grip:disabled{cursor:default;opacity:.4}
 </nav>
 
 <main>
-  <p class="lead mut wrap">영화 등록과 수정, 반 이름 설정, 예매 명단 내려받기를 할 수 있습니다.</p>
+  <p class="lead mut">영화 등록과 수정, 반 이름 설정, 예매 명단 내려받기를 할 수 있습니다.</p>
 
   <form class="login" id="loginForm">
     <input id="pw" type="password" placeholder="관리자 비밀번호" autocomplete="current-password" aria-label="관리자 비밀번호" required>
     <button class="solid">로그인</button>
   </form>
-  <p class="wrap" id="msg" role="status"></p>
+  <p id="msg" role="status"></p>
 
   <div id="panel" hidden>
-    <h2 class="wrap" id="formTitle">영화 등록</h2>
+    <h2 id="formTitle">영화 등록</h2>
     <form class="spec" id="f">
       <div class="cell"><label for="title">영화 제목</label><input id="title" required maxlength="100"></div>
       <div class="cell"><label for="room">반 이름(상영 장소)</label><input id="room" placeholder="예: 2반 교실" maxlength="50"></div>
@@ -155,8 +153,8 @@ button.grip:disabled{cursor:default;opacity:.4}
       <div class="acts"><button class="solid" id="saveBtn">등록</button><button id="resetBtn" type="button" hidden>수정 취소</button></div>
     </form>
 
-    <h2 class="wrap">등록된 영화</h2>
-    <p class="note mut wrap">왼쪽 점 6개 아이콘을 끌어서 순서를 바꾸면 예매 화면에도 같은 순서로 보입니다.</p>
+    <h2>등록된 영화</h2>
+    <p class="note mut">왼쪽 점 6개 아이콘을 끌어서 순서를 바꾸면 예매 화면에도 같은 순서로 보입니다.</p>
     <div class="order" id="orderBar" hidden>
       <span>순서를 바꿨습니다. 저장해야 예매 화면에 반영됩니다.</span>
       <button class="solid" id="orderSave" type="button">순서 저장</button><button id="orderUndo" type="button">되돌리기</button>
