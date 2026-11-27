@@ -46,7 +46,7 @@ button{min-height:48px;padding:0 20px;border:0;border-radius:0;background:none;c
 button.solid{background:var(--ink);color:var(--bg)}
 button.bad{color:var(--bad)}
 button.txt{min-height:44px;padding:0 4px;color:var(--mut);font-size:.88rem}
-button.block{display:block;width:100%;min-height:52px;margin-top:12px;border:1px solid var(--line)}
+button.block{display:block;width:100%;min-height:52px;margin-top:0;border:0;border-bottom:1px solid var(--line)}
 button:disabled{color:var(--mut);cursor:wait}
 button.solid:disabled{background:var(--line)}
 @media (hover:hover){
@@ -56,17 +56,17 @@ button.solid:disabled{background:var(--line)}
 }
 
 /* 로그인 */
-.login{display:grid;grid-template-columns:1fr auto;margin-top:16px;border:1px solid var(--line)}
-.login input{min-width:0;height:52px;padding:0 16px;border:0;border-right:1px solid var(--line);border-radius:0;background:none;color:var(--ink);font:inherit}
-.login input:focus{outline:none;background:var(--hl)}
+.login{display:grid;grid-template-columns:1fr auto;gap:0 16px;margin-top:16px;border:0}
+.login input{min-width:0;height:52px;padding:0 2px;border:0;border-bottom:1px solid var(--line);border-radius:0;background:none;color:var(--ink);font:inherit;transition:border-color .15s}
+.login input::placeholder{color:var(--mut)}
+.login input:focus{outline:none;border-bottom-color:var(--ink);box-shadow:inset 0 -1px 0 var(--ink)}
 .login button{height:52px;padding:0 28px}
 
 /* 등록 양식 (칸이 선으로 나뉘고 아래 버튼은 가로로 꽉 참) */
-.spec{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line)}
-.cell{min-width:0;padding:10px 16px 6px;border-bottom:1px solid var(--line)}
-.cell:nth-child(odd):not(.full){border-right:1px solid var(--line)}
-.cell:focus-within{background:var(--hl)}
-.spec .cell:last-child{border-bottom:0}
+.spec{display:grid;grid-template-columns:1fr 1fr;gap:8px 28px;border:0}
+.cell{min-width:0;padding:10px 0 2px;border-bottom:1px solid var(--line);transition:border-color .15s}
+.cell:focus-within{border-bottom-color:var(--ink);box-shadow:inset 0 -1px 0 var(--ink)}
+.cell:focus-within label{color:var(--ink)}
 .bar{margin-top:12px}
 .full{grid-column:1/-1}
 label{display:block;color:var(--mut);font-size:.78rem}
@@ -74,53 +74,47 @@ input,textarea{display:block;width:100%;min-height:36px;padding:4px 0;border:0;b
 textarea{resize:vertical}
 .cell input:focus,.cell textarea:focus{outline:none}
 .hint{margin:0 0 4px;color:var(--mut);font-size:.82rem}
-.acts{grid-column:1/-1;display:flex}
+.acts{grid-column:1/-1;display:flex;gap:8px;margin-top:12px}
 .acts button{flex:1;min-height:52px}
-.acts button+button{border-left:1px solid var(--line)}
+.strip{display:flex;margin-top:12px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.strip button{flex:1;min-height:52px}
+.strip button+button{border-left:1px solid var(--line)}
 
 /* 순서 저장 바 */
-.order{display:flex;flex-wrap:wrap;align-items:stretch;margin-bottom:12px;border:1px solid var(--line);background:var(--hl)}
+.order{display:flex;flex-wrap:wrap;align-items:stretch;margin-bottom:12px;border:0;background:var(--hl)}
 .order span{flex:1;min-width:200px;align-self:center;padding:12px 16px;color:var(--mut);font-size:.88rem}
-.order button{border-left:1px solid var(--line)}
 
 /* 영화 목록 (수정/삭제는 줄 오른쪽 끝에 붙임) */
 ul{margin:0;padding:0;list-style:none}
-#rows,#stRows{border:1px solid var(--line)}
+#rows,#stRows{border-top:1px solid var(--line)}
 #stRows{margin-top:12px}
 .item{position:relative;display:flex;align-items:stretch;border-bottom:1px solid var(--line)}
-.item:last-child{border-bottom:0}
 .item.drag{z-index:2;background:var(--hl)}
 #rows,.item{overflow-anchor:none}
 body.dragging{user-select:none;cursor:grabbing}
-.imain{display:flex;flex:1;min-width:0;align-items:center;gap:14px;padding:12px 12px 12px 8px}
+.imain{display:flex;flex:1;min-width:0;align-items:center;gap:14px;padding:12px 12px 12px 0}
 .thumb{display:block;flex:none;width:44px;aspect-ratio:2/3;border-radius:0;background:var(--ph);object-fit:cover}
 .thumb.err{display:grid;place-items:center;border:1px solid var(--bad);background:none;color:var(--bad);font-size:.8rem;font-weight:700}
 .meta{display:flex;flex:1;flex-direction:column;min-width:0;font-size:.9rem}
 .meta strong{font-size:1rem;overflow-wrap:anywhere}
 .idx{flex:none;width:1.4em;text-align:center;font-size:.85rem}
 .btns{display:flex;flex:none}
-.btns button{min-width:72px;border-left:1px solid var(--line)}
-.item.st .imain{padding-left:16px}
+.btns button{min-width:72px}
 .sid{flex:none;width:4.5em;font-size:.9rem;font-variant-numeric:tabular-nums}
 button.grip{display:grid;place-items:center;flex:none;min-width:32px;min-height:44px;padding:0;border-radius:6px;color:var(--mut);cursor:grab;touch-action:none;user-select:none;-webkit-touch-callout:none}
 button.grip:disabled{cursor:default;opacity:.4}
 
 @media (max-width:720px){
   .spec{grid-template-columns:1fr}
-  .cell:nth-child(odd):not(.full){border-right:0}
 }
 @media (max-width:520px){
   .order span{flex-basis:100%}
-  .order button{flex:1;border-top:1px solid var(--line)}
-  .order button:first-of-type{border-left:0}
+  .order button{flex:1}
   .item{flex-wrap:wrap}
-  .btns{width:100%;border-top:1px solid var(--line)}
-  .btns button{flex:1}
-  .btns button:first-child{border-left:0}
+  .btns{width:100%;justify-content:flex-end;padding-bottom:4px}
   .item.st{flex-wrap:nowrap}
-  .item.st .btns{width:auto;border-top:0}
-  .item.st .btns button{flex:none;min-width:60px}
-  .item.st .btns button:first-child{border-left:1px solid var(--line)}
+  .item.st .btns{width:auto;padding-bottom:0}
+  .item.st .btns button{min-width:60px}
 }
 </style>
 </head>
@@ -190,7 +184,7 @@ button.grip:disabled{cursor:default;opacity:.4}
 
     <h2>일괄 등록</h2>
     <p class="note mut">첫 줄이 '학번,이름'인 CSV 파일을 올립니다. 이미 있는 학번은 이름이 덮어써지고, 목록에 없는 학생은 지워지지 않습니다.</p>
-    <div class="spec"><div class="acts"><button id="stImport" type="button">CSV로 일괄 등록</button><button id="stExport" type="button">명단 CSV 내려받기</button></div></div>
+    <div class="strip"><button id="stImport" type="button">CSV로 일괄 등록</button><button id="stExport" type="button">명단 CSV 내려받기</button></div>
     <input id="stFile" type="file" accept=".csv,text/csv" hidden>
 
     <h2>학생 명단 <span class="mut" id="stCount"></span></h2>
