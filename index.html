@@ -43,12 +43,16 @@ h1{margin:0;font-size:1.25rem;font-weight:700;letter-spacing:-.01em;white-space:
 .pill:disabled{color:var(--mut);cursor:not-allowed}
 .pill.wait:disabled{cursor:wait}
 
-/* 로그인 */
-.login{display:grid;grid-template-columns:1fr 1fr auto;margin-top:16px;border:1px solid var(--line)}
-.login input{min-width:0;height:52px;padding:0 16px;border:0;border-right:1px solid var(--line);border-radius:0;background:none;color:var(--ink);font:inherit}
-.login input:focus{outline:none;background:var(--hl)}
-.login .pill{height:52px;padding:0 28px;background:var(--ink);color:var(--bg)}
-.login .pill:disabled{opacity:.6;color:var(--bg)}
+/* 로그인 전용 화면 */
+.gate{max-width:360px;margin:0 auto;padding:clamp(40px,14vh,140px) 0 48px}
+.gate h2{margin:0;font-size:1.5rem;font-weight:700;letter-spacing:-.01em}
+.gate .lead{margin:8px 0 24px}
+.gform{display:grid;border:1px solid var(--line)}
+.gform input{min-width:0;height:52px;padding:0 16px;border:0;border-bottom:1px solid var(--line);border-radius:0;background:none;color:var(--ink);font:inherit}
+.gform input:focus{outline:none;background:var(--hl)}
+.gform .pill{width:100%;height:52px;background:var(--ink);color:var(--bg)}
+.gform .pill:disabled{opacity:.6;color:var(--bg)}
+.gate .msg{margin:12px 0 0;color:var(--bad);text-align:left}
 
 /* 하단 예매 바 (좌우 여백을 두고 아래에 띄움) */
 .dock{position:fixed;left:max(var(--m),env(safe-area-inset-left));right:max(var(--m),env(safe-area-inset-right));bottom:calc(12px + env(safe-area-inset-bottom));z-index:20;max-width:960px;margin:0 auto;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
@@ -91,7 +95,7 @@ html.noscroll{overflow:hidden}
 .poster{position:relative;display:block;width:100%;min-height:0;aspect-ratio:2/3;padding:0;border:0;border-radius:0;overflow:hidden;background:var(--ph);cursor:pointer;opacity:.5;transform:scale(.84);transform-origin:50% 100%;transition:transform .25s,opacity .25s}
 .poster::after{content:"";position:absolute;inset:auto 0 0;height:45%;background:linear-gradient(transparent,rgba(0,0,0,.5))}
 .on .poster{opacity:1;transform:none;cursor:default}
-.poster img{display:block;width:100%;height:100%;object-fit:cover}
+.poster img,.gp img{display:block;width:100%;height:100%;object-fit:cover}
 .ph{display:flex;align-items:center;justify-content:center;height:100%;padding:16px;color:#e7e8ea;font-weight:700;font-size:1.1rem;text-align:center;word-break:keep-all}
 .no{position:absolute;left:14px;bottom:8px;z-index:1;color:#fff;font-size:3.5rem;font-weight:700;font-style:italic;line-height:1}
 .tag{position:absolute;top:10px;left:10px;z-index:1;padding:2px 8px;border-radius:0;background:var(--ink);color:var(--bg);font-size:.72rem;font-weight:500;line-height:1.6}
@@ -128,13 +132,25 @@ html.noscroll{overflow:hidden}
 .row .line{justify-content:flex-start}
 .row .pill{flex:none;min-width:104px;border-left:1px solid var(--line)}
 
+/* 넓은 화면(PC·태블릿): 캐러셀 대신 카드 그리드, 예매 버튼은 카드 아래에 */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:32px 24px;margin:8px 0 0;padding:0;list-style:none}
+.card{display:flex;flex-direction:column;min-width:0;text-align:left}
+.card .line{justify-content:flex-start}
+.gp{position:relative;aspect-ratio:2/3;overflow:hidden;background:var(--ph)}
+.cbtn{margin-top:auto;padding-top:12px}
+.cbtn .pill{width:100%;border:1px solid var(--ink);background:var(--ink);color:var(--bg)}
+.cbtn .pill.bad{border-color:var(--bad);background:none;color:var(--bad)}
+.cbtn .pill:disabled{border-color:var(--line);background:none;color:var(--mut)}
+@media (min-width:720px){
+  body{max-width:1200px;--m:32px}
+  main{padding-bottom:64px}
+  .th{width:72px}
+}
 @media (hover:hover){
   .row .pill:hover:not(:disabled),.sheetBtns .pill:first-child:hover:not(:disabled){background:var(--hl)}
+  .cbtn .pill:hover:not(:disabled){opacity:.88}
 }
 @media (max-width:520px){
-  .login{grid-template-columns:1fr 1fr}
-  .login input:nth-child(2){border-right:0}
-  .login .pill{grid-column:1/-1;border-top:1px solid var(--line)}
   .row .pill{min-width:88px}
 }
 @media (prefers-reduced-motion:reduce){.poster,.t,.backdrop,.sheet{transition:none}}
@@ -160,21 +176,28 @@ html.noscroll{overflow:hidden}
     </div>
   </header>
 
-  <nav class="sub">
-    <span class="cur" aria-current="page">상영작</span>
-    <button class="txt" id="viewBtn" type="button">리스트형</button>
-  </nav>
+  <section class="gate" id="gate" hidden>
+    <h2>로그인</h2>
+    <p class="lead mut">학번과 이름을 입력하면 예매 화면으로 이동합니다.</p>
+    <form class="gform" id="loginForm">
+      <input id="sid" placeholder="학번" inputmode="numeric" autocomplete="username" aria-label="학번" required>
+      <input id="name" placeholder="이름" autocomplete="off" aria-label="이름" required>
+      <button class="pill">로그인</button>
+    </form>
+    <p class="msg" id="gateMsg" role="status"></p>
+  </section>
 
-  <p class="lead mut">보고 싶은 영화를 한 편 선택해 예매하세요. 예매 후에도 다른 영화로 바꿀 수 있습니다.</p>
+  <div id="app" hidden>
+    <nav class="sub">
+      <span class="cur" aria-current="page">상영작</span>
+      <button class="txt" id="viewBtn" type="button">리스트형</button>
+    </nav>
 
-  <form class="login" id="loginForm">
-    <input id="sid" placeholder="학번" inputmode="numeric" autocomplete="username" aria-label="학번" required>
-    <input id="name" placeholder="이름" autocomplete="off" aria-label="이름" required>
-    <button class="pill">로그인</button>
-  </form>
+    <p class="lead mut">보고 싶은 영화를 한 편 선택해 예매하세요. 예매 후에도 다른 영화로 바꿀 수 있습니다.</p>
 
-  <p class="msg" id="msg" role="status"></p>
-  <div id="view"></div>
+    <p class="msg" id="msg" role="status"></p>
+    <div id="view"><p class="empty mut">불러오는 중...</p></div>
+  </div>
 </main>
 
 <div class="dock" id="dock" hidden></div>
@@ -205,6 +228,7 @@ const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":
 let token = TEST_MODE ? "test" : localStorage.getItem("token");
 let items = [], mine = null, cur = 0, first = true, sig = "", shown = "";
 let view = localStorage.getItem("view") === "list" ? "list" : "card";
+const pc = matchMedia("(min-width:720px)"), lay = () => (view === "list" ? "list" : pc.matches ? "grid" : "card"); // 화면 배치
 const smooth = () => (matchMedia("(prefers-reduced-motion:reduce)").matches ? "auto" : "smooth");
 const CHEV = (d) => `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>`;
 
@@ -216,18 +240,18 @@ async function api(path, opts = {}) {
   if (!r.ok) throw Object.assign(new Error(d.error || "오류가 발생했습니다."), { status: r.status });
   return d;
 }
-const say = (t) => (($("#sheetWrap").classList.contains("open") ? $("#sheetMsg") : $("#msg")).textContent = t); // 확인창이 열려 있으면 그 안에 표시
+const say = (t) => (($("#sheetWrap").classList.contains("open") ? $("#sheetMsg") : token ? $("#msg") : $("#gateMsg")).textContent = t); // 확인창이 열려 있으면 그 안에, 로그인 전이면 로그인 화면에 표시
 
 // 로그인 상태
 function showUser() {
-  $("#loginForm").hidden = !!token;
+  $("#gate").hidden = !!token;
+  $("#app").hidden = !token;
   $("#userBar").hidden = !token;
   $("#who").textContent = TEST_MODE ? "테스트 학생 " + testUser : (localStorage.getItem("name") || "") + " 학생";
   $("#logoutBtn").textContent = TEST_MODE ? "다른 테스트 학생으로 전환" : "로그아웃";
   if (TEST_MODE) say("테스트 모드입니다. 로그인 없이 예매를 시험할 수 있습니다.");
-  else if (!token) say("로그인하면 예매할 수 있습니다.");
 }
-function logout(m = "") { closeSheet(true); ["token", "name", "admin"].forEach((k) => localStorage.removeItem(k)); token = null; mine = null; showUser(); sig = ""; draw(); if (m) say(m); }
+function logout(m = "") { closeSheet(true); ["token", "name", "admin"].forEach((k) => localStorage.removeItem(k)); token = null; mine = null; items = []; first = true; $("#loginForm").reset(); showUser(); sig = ""; draw(); say(m); }
 
 // 공통 조각
 const poster = (s) => s.poster_url
@@ -263,12 +287,20 @@ function row(s) {
     <div class="info"><h2>${esc(s.title)}</h2>${meta(s)}${desc(s)}</div></div>${btn(s)}</li>`;
 }
 
+// 그리드형 (넓은 화면)
+function card(s) {
+  return `<li class="card on"><div class="gp">${poster(s)}<span class="tagbox">${tagHtml(s)}</span></div>
+    <h2 class="t">${esc(s.title)}</h2>
+    <div class="more">${meta(s)}${desc(s)}</div><div class="cbtn">${btn(s)}</div></li>`;
+}
+
 function render() {
   $("#viewBtn").textContent = view === "list" ? "카드형" : "리스트형";
   shown = key();
   const box = $("#view");
   if (!items.length) { box.innerHTML = `<p class="empty mut">아직 등록된 영화가 없습니다. 곧 공개됩니다.</p>`; return; }
-  if (view === "list") { box.innerHTML = `<ul class="rows">${items.map(row).join("")}</ul>`; return; }
+  if (lay() === "list") { box.innerHTML = `<ul class="rows">${items.map(row).join("")}</ul>`; return; }
+  if (lay() === "grid") { box.innerHTML = `<ul class="grid" id="grid">${items.map(card).join("")}</ul>`; return; }
   cur = Math.min(cur, items.length - 1);
   box.innerHTML = `<div class="stage" role="region" aria-roledescription="carousel" aria-label="상영 영화">
       <button class="arrow" id="prev" type="button" aria-label="이전 영화" onclick="go(cur - 1)">${CHEV("M15 5l-7 7 7 7")}</button>
@@ -309,7 +341,7 @@ function mark() {
 // 하단 고정 예매 바 (가운데 영화 기준)
 const dockState = (s) => (!token ? "off" : mine === s.id ? "cancel" : s.remaining <= 0 ? "off" : "primary");
 function dock(force) {
-  const el = $("#dock"), s = view === "card" ? items[cur] : null;
+  const el = $("#dock"), s = lay() === "card" ? items[cur] : null;
   el.hidden = !s;
   document.body.classList.toggle("hasDock", !!s);
   if (!s) return;
@@ -319,14 +351,15 @@ function dock(force) {
 }
 
 // 데이터 갱신 (바뀐 게 없으면 다시 그리지 않음)
-const key = () => view + JSON.stringify(items.map(({ remaining, ...r }) => r)); // 남은 자리 외 정보
+const key = () => lay() + JSON.stringify(items.map(({ remaining, ...r }) => r)); // 남은 자리 외 정보
 function patch() { // 영화 목록이 같으면 화면을 새로 만들지 않고 내용만 갱신 (애니메이션·깜빡임 방지)
-  const els = $("#track") ? $("#track").children : document.querySelectorAll(".rows .row");
+  const box = $("#track") || $("#grid"), els = box ? box.children : document.querySelectorAll(".rows .row");
   items.forEach((s, i) => {
     const el = els[i];
-    if (view === "card") {
+    if (box) {
       el.querySelector(".tagbox").innerHTML = tagHtml(s);
       el.querySelector(".more").innerHTML = meta(s) + desc(s);
+      if (box.id === "grid") el.querySelector(".cbtn").innerHTML = btn(s);
     } else {
       el.querySelector(".info").innerHTML = `<h2>${esc(s.title)}</h2>${meta(s)}${desc(s)}`;
       el.querySelector(".pill").outerHTML = btn(s);
@@ -334,19 +367,17 @@ function patch() { // 영화 목록이 같으면 화면을 새로 만들지 않�
   });
 }
 function draw() {
-  const s = JSON.stringify([items, mine, view, !!token]);
+  const s = JSON.stringify([items, mine, lay(), !!token]);
   if (s === sig) return;
   sig = s;
-  if (items.length && shown === key() && $("#track, .rows")) patch(); else render();
+  if (items.length && shown === key() && $("#track, #grid, .rows")) patch(); else render();
   dock(true);
 }
 async function load() {
-  try {
-    const d = await api("/api/screenings");
-    items = d.screenings; mine = d.mine;
-    if (first) { first = false; cur = Math.max(items.findIndex((s) => s.id === mine), 0); } // 처음엔 내 예매 영화를 가운데로
-    draw();
-  } catch (e) { say(e.message); }
+  const d = await api("/api/screenings");
+  items = d.screenings; mine = d.mine;
+  if (first) { first = false; cur = Math.max(items.findIndex((s) => s.id === mine), 0); } // 처음엔 내 예매 영화를 가운데로
+  draw();
 }
 // 처리 중 버튼 잠금 (중복 클릭 방지)
 let busy = false;
@@ -381,7 +412,8 @@ function openSheet(type, id, from) {
   $("#sheetInfo").innerHTML = `<div class="th">${poster(s)}</div><div class="info"><h2>${esc(s.title)}</h2>${meta(s)}</div>`;
   $("#sheetMsg").textContent = "";
   const ok = $("#sheetOk");
-  ok.textContent = C[1]; ok.disabled = false; ok.classList.remove("wait"); ok.classList.toggle("bad", type === "cancel");
+  document.querySelectorAll(".sheetBtns .pill").forEach((b) => (b.disabled = false));
+  ok.textContent = C[1]; ok.classList.remove("wait"); ok.classList.toggle("bad", type === "cancel");
   ok.onclick = async () => {
     let sold = false;
     await act(ok, C[2], async () => {
@@ -436,16 +468,19 @@ $("#loginForm").onsubmit = (e) => {
   e.preventDefault();
   act($("#loginForm button"), "로그인 중...", async () => {
     const d = await api("/api/login", { method: "POST", body: JSON.stringify({ studentId: $("#sid").value, name: $("#name").value }) });
-    token = d.token; localStorage.setItem("token", token); localStorage.setItem("name", d.name);
+    token = d.token;
+    try { await load(); } catch (e) { token = null; throw e; } // 목록을 받아온 뒤에 예매 화면으로 전환
+    localStorage.setItem("token", token); localStorage.setItem("name", d.name);
     showUser(); say("");
-    await load();
   });
 };
 $("#logoutBtn").onclick = () => {
   if (!TEST_MODE) return logout();
   testUser = newId(); localStorage.setItem("testUser", testUser); mine = null; showUser(); sig = ""; draw(); // 새 학생인 척 전환
 };
-showUser(); load(); // 정원은 새로고침해야 다시 불러옴
+pc.addEventListener("change", () => { sig = ""; draw(); }); // 창 크기에 따라 배치 전환
+showUser();
+if (token) load().catch((e) => { if (!token) return; say(e.message); $("#view").innerHTML = `<p class="empty mut">불러오지 못했습니다. 새로고침해 주세요.</p>`; }); // 정원은 새로고침해야 다시 불러옴
 </script>
 </body>
 </html>
