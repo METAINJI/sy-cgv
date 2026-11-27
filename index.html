@@ -169,7 +169,7 @@ html.noscroll{overflow:hidden}
 
   <form class="login" id="loginForm">
     <input id="sid" placeholder="학번" inputmode="numeric" autocomplete="username" aria-label="학번" required>
-    <input id="code" placeholder="개인 코드" autocomplete="current-password" aria-label="개인 코드" required>
+    <input id="name" placeholder="이름" autocomplete="off" aria-label="이름" required>
     <button class="pill">로그인</button>
   </form>
 
@@ -196,7 +196,7 @@ html.noscroll{overflow:hidden}
 
 <script>
 const API = "https://songyang-cgv.pcofjeongchan.workers.dev"; // 배포한 Worker 주소
-const TEST_MODE = true; // 로그인 없이 테스트 (운영 때는 false)
+const TEST_MODE = false; // 로그인 없이 테스트 (운영 때는 false)
 const newId = () => "test-" + Math.random().toString(36).slice(2, 7);
 let testUser = localStorage.getItem("testUser") || newId();
 localStorage.setItem("testUser", testUser);
@@ -435,7 +435,7 @@ $("#viewBtn").onclick = () => { view = view === "list" ? "card" : "list"; localS
 $("#loginForm").onsubmit = (e) => {
   e.preventDefault();
   act($("#loginForm button"), "로그인 중...", async () => {
-    const d = await api("/api/login", { method: "POST", body: JSON.stringify({ studentId: $("#sid").value, code: $("#code").value }) });
+    const d = await api("/api/login", { method: "POST", body: JSON.stringify({ studentId: $("#sid").value, name: $("#name").value }) });
     token = d.token; localStorage.setItem("token", token); localStorage.setItem("name", d.name);
     showUser(); say("");
     await load();
