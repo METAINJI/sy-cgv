@@ -25,6 +25,9 @@ a:hover{color:var(--ink)}
 h1{margin:0;font-size:1.25rem;font-weight:700;letter-spacing:-.01em}
 .sub{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
 .cur{padding:12px 2px;margin-bottom:-1px;border-bottom:2px solid var(--ink);font-size:.95rem;font-weight:700}
+.tabs{display:flex;gap:20px}
+button.tab{min-height:0;padding:12px 2px;margin-bottom:-1px;border-bottom:2px solid transparent;color:var(--mut);font-size:.95rem}
+button.tab[aria-selected="true"]{border-bottom-color:var(--ink);color:var(--ink);font-weight:700}
 .tools{display:flex;align-items:center;gap:16px}
 .theme{position:relative}
 .theme>button{display:grid;place-items:center;width:44px;padding:0}
@@ -47,8 +50,8 @@ button.block{display:block;width:100%;min-height:52px;margin-top:12px;border:1px
 button:disabled{color:var(--mut);cursor:wait}
 button.solid:disabled{background:var(--line)}
 @media (hover:hover){
-  button:hover:not(:disabled):not(.solid):not(.grip):not(.txt){background:var(--hl)}
-  button.txt:hover:not(:disabled){color:var(--ink)}
+  button:hover:not(:disabled):not(.solid):not(.grip):not(.txt):not(.tab){background:var(--hl)}
+  button.txt:hover:not(:disabled),button.tab:hover:not(:disabled){color:var(--ink)}
   button.solid:hover:not(:disabled){opacity:.9}
 }
 
@@ -63,6 +66,8 @@ button.solid:disabled{background:var(--line)}
 .cell{min-width:0;padding:10px 16px 6px;border-bottom:1px solid var(--line)}
 .cell:nth-child(odd):not(.full){border-right:1px solid var(--line)}
 .cell:focus-within{background:var(--hl)}
+.spec .cell:last-child{border-bottom:0}
+.bar{margin-top:12px}
 .full{grid-column:1/-1}
 label{display:block;color:var(--mut);font-size:.78rem}
 input,textarea{display:block;width:100%;min-height:36px;padding:4px 0;border:0;border-radius:0;background:none;color:var(--ink);font:inherit}
@@ -80,7 +85,8 @@ textarea{resize:vertical}
 
 /* 영화 목록 (수정/삭제는 줄 오른쪽 끝에 붙임) */
 ul{margin:0;padding:0;list-style:none}
-#rows{border:1px solid var(--line)}
+#rows,#stRows{border:1px solid var(--line)}
+#stRows{margin-top:12px}
 .item{position:relative;display:flex;align-items:stretch;border-bottom:1px solid var(--line)}
 .item:last-child{border-bottom:0}
 .item.drag{z-index:2;background:var(--hl)}
@@ -94,6 +100,8 @@ body.dragging{user-select:none;cursor:grabbing}
 .idx{flex:none;width:1.4em;text-align:center;font-size:.85rem}
 .btns{display:flex;flex:none}
 .btns button{min-width:72px;border-left:1px solid var(--line)}
+.item.st .imain{padding-left:16px}
+.sid{flex:none;width:4.5em;font-size:.9rem;font-variant-numeric:tabular-nums}
 button.grip{display:grid;place-items:center;flex:none;min-width:32px;min-height:44px;padding:0;border-radius:6px;color:var(--mut);cursor:grab;touch-action:none;user-select:none;-webkit-touch-callout:none}
 button.grip:disabled{cursor:default;opacity:.4}
 
@@ -109,6 +117,10 @@ button.grip:disabled{cursor:default;opacity:.4}
   .btns{width:100%;border-top:1px solid var(--line)}
   .btns button{flex:1}
   .btns button:first-child{border-left:0}
+  .item.st{flex-wrap:nowrap}
+  .item.st .btns{width:auto;border-top:0}
+  .item.st .btns button{flex:none;min-width:60px}
+  .item.st .btns button:first-child{border-left:1px solid var(--line)}
 }
 </style>
 </head>
@@ -125,7 +137,11 @@ button.grip:disabled{cursor:default;opacity:.4}
       </div>
 </header>
 <nav class="sub">
-  <span class="cur" aria-current="page">영화 관리</span>
+  <span class="cur" id="curLabel">관리자</span>
+  <div class="tabs" id="tabs" hidden>
+    <button class="tab" type="button" data-tab="movies" aria-selected="true">영화 관리</button>
+    <button class="tab" type="button" data-tab="students" aria-selected="false">학생 관리</button>
+  </div>
   <div class="tools" id="tools" hidden>
     <a href="index.html">예매 페이지 보기</a>
     <button class="txt" id="logoutBtn" type="button">로그아웃</button>
@@ -133,7 +149,7 @@ button.grip:disabled{cursor:default;opacity:.4}
 </nav>
 
 <main>
-  <p class="lead mut">영화 등록과 수정, 반 이름 설정, 예매 명단 내려받기를 할 수 있습니다.</p>
+  <p class="lead mut">영화 등록과 수정, 반 이름 설정, 예매 명단 내려받기, 학생(학번·이름) 명단 관리를 할 수 있습니다.</p>
 
   <form class="login" id="loginForm">
     <input id="pw" type="password" placeholder="관리자 비밀번호" autocomplete="current-password" aria-label="관리자 비밀번호" required>
@@ -142,6 +158,7 @@ button.grip:disabled{cursor:default;opacity:.4}
   <p id="msg" role="status"></p>
 
   <div id="panel" hidden>
+  <section id="tabMovies">
     <h2 id="formTitle">영화 등록</h2>
     <form class="spec" id="f">
       <div class="cell"><label for="title">영화 제목</label><input id="title" required maxlength="100"></div>
@@ -161,6 +178,27 @@ button.grip:disabled{cursor:default;opacity:.4}
     </div>
     <ul id="rows"></ul>
     <button class="block" id="csvBtn" type="button">예매 명단 CSV 내려받기</button>
+  </section>
+
+  <section id="tabStudents" hidden>
+    <h2 id="sfTitle">학생 등록</h2>
+    <form class="spec" id="sf">
+      <div class="cell"><label for="stId">학번</label><input id="stId" required maxlength="20" inputmode="numeric" autocomplete="off"></div>
+      <div class="cell"><label for="stName">이름</label><input id="stName" required maxlength="30" autocomplete="off"></div>
+      <div class="acts"><button class="solid" id="sfSave">등록</button><button id="sfReset" type="button" hidden>수정 취소</button></div>
+    </form>
+
+    <h2>일괄 등록</h2>
+    <p class="note mut">첫 줄이 '학번,이름'인 CSV 파일을 올립니다. 이미 있는 학번은 이름이 덮어써지고, 목록에 없는 학생은 지워지지 않습니다.</p>
+    <div class="spec"><div class="acts"><button id="stImport" type="button">CSV로 일괄 등록</button><button id="stExport" type="button">명단 CSV 내려받기</button></div></div>
+    <input id="stFile" type="file" accept=".csv,text/csv" hidden>
+
+    <h2>학생 명단 <span class="mut" id="stCount"></span></h2>
+    <p class="note mut">학생이 로그인할 때 여기 등록된 학번과 이름이 같아야 합니다. 공백은 무시됩니다.</p>
+    <div class="spec"><div class="cell full"><label for="stQ">검색 (학번 또는 이름)</label><input id="stQ" autocomplete="off"></div></div>
+    <ul id="stRows"></ul>
+    <button class="block" id="stMore" type="button" hidden></button>
+  </section>
   </div>
 </main>
 
@@ -192,7 +230,7 @@ async function api(path, opts = {}) {
   if (!r.ok) throw new Error(d.error || "오류가 발생했습니다.");
   return d;
 }
-function show(on) { $("#panel").hidden = !on; $("#loginForm").hidden = on; $("#tools").hidden = !on; }
+function show(on) { $("#panel").hidden = !on; $("#loginForm").hidden = on; $("#tools").hidden = !on; $("#tabs").hidden = !on; $("#curLabel").hidden = on; if (!on) showTab("movies"); }
 function logout(m = "") { dirty = false; pw = ""; sessionStorage.removeItem("adminPw"); show(false); say(m); }
 
 async function load() {
@@ -379,6 +417,111 @@ $("#loginForm").onsubmit = (e) => {
   });
 };
 $("#logoutBtn").onclick = () => logout();
+
+// ---------- 학생 관리 ----------
+const ID_RE = /^[0-9A-Za-z_-]{1,20}$/, norm = (v) => String(v ?? "").normalize("NFC").replace(/\s+/g, ""); // 서버와 같은 규칙
+let students = [], stEditId = null, stLimit = 100;
+function showTab(t) {
+  $("#tabMovies").hidden = t !== "movies"; $("#tabStudents").hidden = t !== "students";
+  document.querySelectorAll(".tab").forEach((b) => b.setAttribute("aria-selected", b.dataset.tab === t));
+}
+$("#tabs").onclick = (e) => {
+  const b = e.target.closest(".tab"); if (!b) return;
+  showTab(b.dataset.tab); say("");
+  if (b.dataset.tab === "students") loadStudents(); else load(); // 영화 탭은 다시 불러와 예매 인원을 최신으로
+};
+async function loadStudents() {
+  try { students = (await api("/api/admin/students")).students; renderStudents(); } catch (e) { say(e.message); }
+}
+function renderStudents() {
+  const q = norm($("#stQ").value).toLowerCase();
+  const list = q ? students.filter((s) => s.student_id.toLowerCase().includes(q) || norm(s.name).toLowerCase().includes(q)) : students;
+  $("#stCount").textContent = (q ? list.length + " / " : "") + students.length + "명";
+  $("#stRows").innerHTML = list.length ? list.slice(0, stLimit).map((s) => `<li class="item st" data-sid="${esc(s.student_id)}">
+    <div class="imain"><span class="sid mut">${esc(s.student_id)}</span><strong>${esc(s.name)}</strong></div>
+    <div class="btns"><button data-a="edit">수정</button><button class="bad" data-a="del">삭제</button></div></li>`).join("")
+    : `<li class="item"><div class="imain mut">${students.length ? "검색 결과가 없습니다." : "등록된 학생이 없습니다. CSV로 일괄 등록하거나 위 양식으로 추가하세요."}</div></li>`;
+  $("#stMore").hidden = list.length <= stLimit;
+  $("#stMore").textContent = `더 보기 (${list.length - stLimit}명 남음)`;
+}
+$("#stQ").oninput = () => { stLimit = 100; renderStudents(); };
+$("#stMore").onclick = () => { stLimit += 100; renderStudents(); };
+function stReset() {
+  stEditId = null; $("#sf").reset();
+  $("#sfTitle").textContent = "학생 등록"; $("#sfSave").textContent = "등록"; $("#sfReset").hidden = true;
+}
+$("#sfReset").onclick = stReset;
+$("#sf").onsubmit = (e) => {
+  e.preventDefault();
+  const id = stEditId, body = JSON.stringify({ student_id: $("#stId").value, name: $("#stName").value });
+  act($("#sfSave"), id ? "저장 중..." : "등록 중...", async () => {
+    await api(id ? "/api/admin/students/" + encodeURIComponent(id) : "/api/admin/students", { method: id ? "PUT" : "POST", body });
+    stReset(); await loadStudents(); say(id ? "수정했습니다." : "등록했습니다.");
+  });
+};
+$("#stRows").onclick = (e) => {
+  const b = e.target.closest("button[data-a]"), li = e.target.closest("li");
+  const s = b && li && students.find((x) => x.student_id === li.dataset.sid);
+  if (!s) return;
+  if (b.dataset.a === "edit") {
+    stEditId = s.student_id; $("#stId").value = s.student_id; $("#stName").value = s.name;
+    $("#sfTitle").textContent = "학생 수정"; $("#sfSave").textContent = "저장"; $("#sfReset").hidden = false;
+    scrollTo({ top: 0, behavior: "smooth" });
+    return;
+  }
+  if (!confirm(`${s.name}(${s.student_id}) 학생을 삭제할까요? 예매한 영화가 있으면 함께 취소됩니다.`)) return;
+  act(b, "삭제 중...", async () => {
+    await api("/api/admin/students/" + encodeURIComponent(s.student_id), { method: "DELETE" });
+    if (stEditId === s.student_id) stReset();
+    await loadStudents(); say("삭제했습니다.");
+  });
+};
+
+// CSV 일괄 등록 (엑셀이 저장한 EUC-KR 파일도 읽음)
+function parseCsv(text) {
+  const rows = []; let row = [], cur = "", q = false;
+  text = text.replace(/^\uFEFF/, "");
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (q) { if (c !== '"') cur += c; else if (text[i + 1] === '"') { cur += '"'; i++; } else q = false; }
+    else if (c === '"') q = true;
+    else if (c === ",") { row.push(cur); cur = ""; }
+    else if (c === "\n" || c === "\r") { if (c === "\r" && text[i + 1] === "\n") i++; row.push(cur); rows.push(row); row = []; cur = ""; }
+    else cur += c;
+  }
+  if (cur || row.length) { row.push(cur); rows.push(row); }
+  return rows;
+}
+$("#stImport").onclick = () => $("#stFile").click();
+$("#stFile").onchange = (e) => {
+  const file = e.target.files[0]; e.target.value = "";
+  if (!file) return;
+  act($("#stImport"), "등록 중...", async () => {
+    const buf = await file.arrayBuffer();
+    let text; try { text = new TextDecoder("utf-8", { fatal: true }).decode(buf); } catch { text = new TextDecoder("euc-kr").decode(buf); }
+    const list = [], bad = [];
+    parseCsv(text).forEach((r, i) => {
+      if (r.every((c) => !c.trim())) return;
+      const id = norm(r[0]), name = norm(r[1]);
+      if (i === 0 && id === "학번") return; // 제목 줄
+      if (ID_RE.test(id) && name && name.length <= 30) list.push({ student_id: id, name }); else bad.push(i + 1);
+    });
+    if (bad.length) throw new Error(`${bad.slice(0, 5).join(", ")}번째 줄이 '학번,이름' 형식이 아닙니다. 아무것도 등록하지 않았습니다.`);
+    if (!list.length) throw new Error("등록할 학생이 없습니다.");
+    if (!confirm(`${list.length}명을 등록합니다. 이미 있는 학번은 이름이 덮어써집니다. 계속할까요?`)) return;
+    const d = await api("/api/admin/students/bulk", { method: "POST", body: JSON.stringify({ students: list }) });
+    await loadStudents();
+    say(`${d.total}명 처리: 새로 ${d.added}명 추가, ${d.total - d.added}명은 기존 학번(이름 갱신)`);
+  });
+};
+$("#stExport").onclick = () => {
+  if (!students.length) return say("내려받을 학생이 없습니다.");
+  const q = (v) => (/[",\r\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
+  const csv = "학번,이름\r\n" + students.map((s) => q(s.student_id) + "," + q(s.name)).join("\r\n");
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob(["\uFEFF" + csv], { type: "text/csv" })); a.download = "학번이름.csv"; a.click();
+};
+
 // 화면 모드 (기기 설정 / 라이트 / 다크)
 const dq = matchMedia("(prefers-color-scheme:dark)"), menu = $("#themeMenu"), tbtn = $("#themeBtn");
 function applyTheme() {
