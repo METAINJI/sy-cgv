@@ -42,34 +42,40 @@ h2{margin:32px 0 8px;font-size:1.05rem;font-weight:700}
 #msg{min-height:1.6em;margin:12px 0 0;color:var(--mut);font-size:.88rem}
 
 /* 버튼 (모서리 없는 평평한 버튼) */
-button{min-height:48px;padding:0 20px;border:0;border-radius:0;background:none;color:var(--ink);font:inherit;font-size:.92rem;font-weight:500;white-space:nowrap;cursor:pointer}
-button.solid{background:var(--ink);color:var(--bg)}
+button{min-height:48px;padding:0 20px;border:0;border-radius:0;background:linear-gradient(var(--hl),var(--hl)) no-repeat 0 50%/0 100%;color:var(--ink);font:inherit;font-size:.92rem;font-weight:500;white-space:nowrap;cursor:pointer;transition:background-size .3s cubic-bezier(.2,.7,.2,1),background-color .2s,color .2s,opacity .2s,transform .12s}
+button.solid{background:var(--ink);color:var(--bg);box-shadow:inset 0 0 0 1px var(--ink)}
+button:active:not(:disabled):not(.grip):not(.tab):not(.txt){transform:scale(.97)}
+button.tab{transition:color .2s,border-color .2s}
+#themeBtn svg{transition:transform .5s cubic-bezier(.2,.7,.2,1)}
 button.bad{color:var(--bad)}
 button.txt{min-height:44px;padding:0 4px;color:var(--mut);font-size:.88rem}
 button.block{display:block;width:100%;min-height:52px;margin-top:0;border:0;border-bottom:1px solid var(--line)}
 button:disabled{color:var(--mut);cursor:wait}
-button.solid:disabled{background:var(--line)}
+button.solid:disabled{background:var(--line);box-shadow:none}
 @media (hover:hover){
-  button:hover:not(:disabled):not(.solid):not(.grip):not(.txt):not(.tab){background:var(--hl)}
+  button:hover:not(:disabled):not(.solid):not(.grip):not(.txt):not(.tab){background-size:100% 100%}
   button.txt:hover:not(:disabled),button.tab:hover:not(:disabled){color:var(--ink)}
-  button.solid:hover:not(:disabled){opacity:.9}
+  button.tab:hover:not(:disabled):not([aria-selected="true"]){border-bottom-color:var(--mut)}
+  button.solid:hover:not(:disabled){background:transparent;color:var(--ink)}
+  button.grip:hover:not(:disabled){color:var(--ink)}
+  #themeBtn:hover svg{transform:rotate(180deg)}
 }
 
 /* 로그인 */
 .login{display:grid;grid-template-columns:1fr auto;gap:0 16px;margin-top:16px;border:0}
-.login input{min-width:0;height:52px;padding:0 2px;border:0;border-bottom:1px solid var(--line);border-radius:0;background:none;color:var(--ink);font:inherit;transition:border-color .15s}
+.login input{min-width:0;height:52px;padding:0 2px;border:0;border-bottom:1px solid var(--line);border-radius:0;background:linear-gradient(var(--ink),var(--ink)) no-repeat 0 100%/0 2px;background-origin:border-box;color:var(--ink);font:inherit;transition:background-size .3s cubic-bezier(.2,.7,.2,1)}
 .login input::placeholder{color:var(--mut)}
-.login input:focus{outline:none;border-bottom-color:var(--ink);box-shadow:inset 0 -1px 0 var(--ink)}
+.login input:focus{outline:none;background-size:100% 2px}
 .login button{height:52px;padding:0 28px}
 
 /* 등록 양식 (칸이 선으로 나뉘고 아래 버튼은 가로로 꽉 참) */
 .spec{display:grid;grid-template-columns:1fr 1fr;gap:8px 28px;border:0}
-.cell{min-width:0;padding:10px 0 2px;border-bottom:1px solid var(--line);transition:border-color .15s}
-.cell:focus-within{border-bottom-color:var(--ink);box-shadow:inset 0 -1px 0 var(--ink)}
+.cell{min-width:0;padding:10px 0 2px;border-bottom:1px solid var(--line);background:linear-gradient(var(--ink),var(--ink)) no-repeat 0 100%/0 2px;background-origin:border-box;transition:background-size .3s cubic-bezier(.2,.7,.2,1)}
+.cell:focus-within{background-size:100% 2px}
 .cell:focus-within label{color:var(--ink)}
 .bar{margin-top:12px}
 .full{grid-column:1/-1}
-label{display:block;color:var(--mut);font-size:.78rem}
+label{display:block;color:var(--mut);font-size:.78rem;transition:color .2s}
 input,textarea{display:block;width:100%;min-height:36px;padding:4px 0;border:0;border-radius:0;background:none;color:var(--ink);font:inherit}
 textarea{resize:vertical}
 .cell input:focus,.cell textarea:focus{outline:none}
@@ -116,6 +122,12 @@ button.grip:disabled{cursor:default;opacity:.4}
   .item.st .btns{width:auto;padding-bottom:0}
   .item.st .btns button{min-width:60px}
 }
+@keyframes rise{from{opacity:0;transform:translateY(8px)}}
+@keyframes pop{from{opacity:0;transform:translateY(-4px) scale(.97)}}
+#tabMovies,#tabStudents{animation:rise .4s cubic-bezier(.2,.7,.2,1) backwards}
+.order{animation:rise .3s cubic-bezier(.2,.7,.2,1) backwards}
+.themeMenu{transform-origin:100% 0;animation:pop .16s ease-out}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
