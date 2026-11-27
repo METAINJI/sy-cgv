@@ -23,7 +23,9 @@ button,input{touch-action:manipulation}
 h1{margin:0;font-size:1.25rem;font-weight:700;letter-spacing:-.01em;white-space:nowrap}
 .who{display:flex;flex-wrap:wrap;align-items:center;gap:0 12px;font-size:.9rem}
 .txt{min-height:44px;padding:0 4px;border:0;background:none;color:var(--mut);font:inherit;font-size:.88rem;white-space:nowrap;cursor:pointer}
+.txt{transition:color .2s}
 .txt:hover{color:var(--ink)}
+#themeBtn svg{transition:transform .5s cubic-bezier(.2,.7,.2,1)}
 .topR{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:0 4px}
 .theme{position:relative}
 .theme>button{display:grid;place-items:center;width:44px;padding:0}
@@ -38,20 +40,21 @@ h1{margin:0;font-size:1.25rem;font-weight:700;letter-spacing:-.01em;white-space:
 .msg{min-height:1.6em;margin:16px 0 8px;text-align:center;color:var(--mut);font-size:.88rem}
 
 /* 버튼 (모서리 없는 평평한 버튼) */
-.pill{display:block;min-height:48px;padding:0 20px;border:0;border-radius:0;background:none;color:var(--ink);font:inherit;font-size:.92rem;font-weight:500;white-space:nowrap;cursor:pointer}
+.pill{display:block;min-height:48px;padding:0 20px;border:0;border-radius:0;background:linear-gradient(var(--hl),var(--hl)) no-repeat 0 50%/0 100%;color:var(--ink);font:inherit;font-size:.92rem;font-weight:500;white-space:nowrap;cursor:pointer;transition:background-size .3s cubic-bezier(.2,.7,.2,1),background-color .2s,color .2s,opacity .2s,transform .12s}
 .pill.bad{color:var(--bad)}
 .pill:disabled{color:var(--mut);cursor:not-allowed}
 .pill.wait:disabled{cursor:wait}
+.pill:active:not(:disabled){transform:scale(.97)}
 
 /* 로그인 전용 화면 */
 .gate{max-width:360px;margin:0 auto;padding:clamp(40px,14vh,140px) 0 48px}
 .gate h2{margin:0;font-size:1.5rem;font-weight:700;letter-spacing:-.01em}
 .gate .lead{margin:8px 0 24px}
 .gform{display:grid;border:0}
-.gform input{min-width:0;height:52px;padding:0 2px;border:0;border-bottom:1px solid var(--line);border-radius:0;background:none;color:var(--ink);font:inherit;transition:border-color .15s}
+.gform input{min-width:0;height:52px;padding:0 2px;border:0;border-bottom:1px solid var(--line);border-radius:0;background:linear-gradient(var(--ink),var(--ink)) no-repeat 0 100%/0 2px;background-origin:border-box;color:var(--ink);font:inherit;transition:background-size .3s cubic-bezier(.2,.7,.2,1)}
 .gform input::placeholder{color:var(--mut)}
-.gform input:focus{outline:none;border-bottom-color:var(--ink);box-shadow:inset 0 -1px 0 var(--ink)}
-.gform .pill{width:100%;height:52px;margin-top:28px;background:var(--ink);color:var(--bg)}
+.gform input:focus{outline:none;background-size:100% 2px}
+.gform .pill{width:100%;height:52px;margin-top:28px;background:var(--ink);color:var(--bg);box-shadow:inset 0 0 0 1px var(--ink)}
 .gform .pill:disabled{opacity:.6;color:var(--bg)}
 .gate .msg{margin:12px 0 0;color:var(--bad);text-align:left}
 
@@ -61,6 +64,7 @@ h1{margin:0;font-size:1.25rem;font-weight:700;letter-spacing:-.01em;white-space:
 .dock.cancel{border-top-color:var(--bad);color:var(--bad)}
 .dock.off{color:var(--mut)}
 .dock .pill{width:100%;min-height:var(--dock);background:none;color:inherit;font-size:1rem}
+.dock .pill:active:not(:disabled){transform:none;opacity:.85}
 .dock.primary .pill:disabled{opacity:.55}
 
 /* 확인창 (작은 팝업이 아래에서 올라옴) */
@@ -97,6 +101,7 @@ html.noscroll{overflow:hidden}
 .poster::after{content:"";position:absolute;inset:auto 0 0;height:45%;background:linear-gradient(transparent,rgba(0,0,0,.5))}
 .on .poster{opacity:1;transform:none;cursor:default}
 .poster img,.gp img{display:block;width:100%;height:100%;object-fit:cover}
+.gp img,.th img{transition:transform .5s cubic-bezier(.2,.7,.2,1)}
 .ph{display:flex;align-items:center;justify-content:center;height:100%;padding:16px;color:#e7e8ea;font-weight:700;font-size:1.1rem;text-align:center;word-break:keep-all}
 .no{position:absolute;left:14px;bottom:8px;z-index:1;color:#fff;font-size:3.5rem;font-weight:700;font-style:italic;line-height:1}
 .tag{position:absolute;top:10px;left:10px;z-index:1;padding:2px 8px;border-radius:0;background:var(--ink);color:var(--bg);font-size:.72rem;font-weight:500;line-height:1.6}
@@ -113,6 +118,7 @@ html.noscroll{overflow:hidden}
 .line{display:flex;flex-wrap:wrap;justify-content:center;gap:0 14px}
 .line span{white-space:nowrap}
 .arrow{position:absolute;z-index:2;top:calc(var(--w) * .75);transform:translateY(-50%);display:grid;place-items:center;width:40px;height:40px;padding:0;border:1px solid var(--mut);border-radius:50%;background:var(--bg);color:var(--ink);cursor:pointer}
+.arrow{transition:background-color .2s,color .2s,border-color .2s,opacity .2s}
 #prev{left:0}
 #next{right:0}
 .arrow:disabled{opacity:.3;cursor:default}
@@ -147,13 +153,31 @@ html.noscroll{overflow:hidden}
   .th{width:72px}
 }
 @media (hover:hover){
-  .row .pill:hover:not(:disabled),.sheetBtns .pill:first-child:hover:not(:disabled){background:var(--hl)}
-  .cbtn .pill:hover:not(:disabled){opacity:.88}
+  .row .pill:hover:not(:disabled),.sheetBtns .pill:first-child:hover:not(:disabled){background-size:100% 100%}
+  .cbtn .pill:hover:not(:disabled),.gform .pill:hover:not(:disabled){background:transparent;color:var(--ink)}
+  .cbtn .pill.bad:hover:not(:disabled){background:var(--bad);color:var(--bg)}
+  #sheetOk:hover:not(:disabled){opacity:.88}
+  .arrow:hover:not(:disabled){border-color:var(--ink);background:var(--ink);color:var(--bg)}
+  .slide:not(.on) .poster:hover{opacity:.8}
+  .card:hover .gp img,.row:hover .th img{transform:scale(1.05)}
+  #themeBtn:hover svg{transform:rotate(180deg)}
 }
 @media (max-width:520px){
   .row .pill{min-width:80px}
 }
-@media (prefers-reduced-motion:reduce){.poster,.t,.backdrop,.sheet{transition:none}}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}}
+@keyframes fade{from{opacity:0}}
+@keyframes pop{from{opacity:0;transform:translateY(-4px) scale(.97)}}
+@keyframes tagIn{from{opacity:0;transform:scale(.85)}}
+.card,.row{animation:rise .5s cubic-bezier(.2,.7,.2,1) backwards;animation-delay:calc(var(--i,0) * 55ms)}
+.slide{animation:fade .5s ease-out backwards;animation-delay:calc(var(--i,0) * 60ms)}
+.tag{animation:tagIn .25s ease-out}
+.gate>*{animation:rise .55s cubic-bezier(.2,.7,.2,1) backwards}
+.gate>:nth-child(2){animation-delay:.06s}
+.gate>:nth-child(3){animation-delay:.12s}
+.gate>:nth-child(4){animation-delay:.18s}
+.themeMenu{transform-origin:100% 0;animation:pop .16s ease-out}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
@@ -274,7 +298,7 @@ const desc = (s) => (s.description ? `<p class="desc">${esc(s.description)}</p>`
 // 카드형 (가운데 포커스)
 const tagHtml = (s) => (mine === s.id ? `<span class="tag ok">예매 완료</span>` : s.remaining <= 0 ? `<span class="tag">매진</span>` : "");
 function slide(s, i) {
-  return `<li class="slide${i === cur ? " on" : ""}" data-i="${i}">
+  return `<li class="slide${i === cur ? " on" : ""}" data-i="${i}" style="--i:${Math.min(i, 6)}">
     <button class="poster" type="button" onclick="go(${i})" aria-label="${esc(s.title)} 선택">
       ${poster(s)}<span class="tagbox">${tagHtml(s)}</span><b class="no">${i + 1}</b>
     </button>
@@ -282,14 +306,14 @@ function slide(s, i) {
     <div class="more">${meta(s)}${desc(s)}</div></li>`;
 }
 // 리스트형
-function row(s) {
-  return `<li class="row"><div class="rowMain"><div class="th">${poster(s)}</div>
+function row(s, i) {
+  return `<li class="row" style="--i:${Math.min(i, 10)}"><div class="rowMain"><div class="th">${poster(s)}</div>
     <div class="info"><h2>${esc(s.title)}</h2>${meta(s)}${desc(s)}</div></div>${btn(s)}</li>`;
 }
 
 // 그리드형 (넓은 화면)
-function card(s) {
-  return `<li class="card on"><div class="gp">${poster(s)}<span class="tagbox">${tagHtml(s)}</span></div>
+function card(s, i) {
+  return `<li class="card on" style="--i:${Math.min(i, 10)}"><div class="gp">${poster(s)}<span class="tagbox">${tagHtml(s)}</span></div>
     <h2 class="t">${esc(s.title)}</h2>
     <div class="more">${meta(s)}${desc(s)}</div><div class="cbtn">${btn(s)}</div></li>`;
 }
